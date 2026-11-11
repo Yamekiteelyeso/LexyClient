@@ -1,0 +1,74 @@
+package com.lexy.client;
+
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.*;
+import java.util.*;
+import java.util.function.*;
+
+/** Direct wrappers around Minecraft's actual 1.20.1 video settings. */
+public final class OptimizationManager {
+    private OptimizationManager() {}
+    public record Entry(String name, String help, Supplier<String> value, IntConsumer adjust) {}
+    public static final List<Entry> OPTIONS = List.of(
+        new Entry("Render Distance", "Chunks rendered by your client", ()-> String.valueOf(o().getViewDistance().getValue())+" chunks",
+            d -> o().getViewDistance().setValue(clamp(o().getViewDistance().getValue()+d*2,2,16))),
+        new Entry("FPS Limit", "Frame-rate cap; higher is not always smoother", ()-> o().getMaxFps().getValue()+" FPS",
+            d -> o().getMaxFps().setValue(clamp(o().getMaxFps().getValue()+d*30,30,260))),
+        new Entry("Graphics", "Fast mode reduces expensive effects", ()-> o().getGraphicsMode().getValue().toString(),
+            d -> o().getGraphicsMode().setValue(o().getGraphicsMode().getValue()==GraphicsMode.FAST?GraphicsMode.FANCY:GraphicsMode.FAST)),
+        new Entry("Particles", "Reduces game particle density", ()-> o().getParticles().getValue().toString(),
+            d -> {ParticlesMode[] a={ParticlesMode.ALL,ParticlesMode.DECREASED,ParticlesMode.MINIMAL}; int i=Arrays.asList(a).indexOf(o().getParticles().getValue());o().getParticles().setValue(a[Math.floorMod(i+d,a.length)]);}),
+        new Entry("Clouds", "Turn off clouds for less rendering", ()-> o().getCloudRenderMode().getValue().toString(),
+            d -> {CloudRenderMode[] a={CloudRenderMode.OFF,CloudRenderMode.FAST,CloudRenderMode.FANCY};int i=Arrays.asList(a).indexOf(o().getCloudRenderMode().getValue());o().getCloudRenderMode().setValue(a[Math.floorMod(i+d,a.length)]);}),
+        new Entry("Entity Shadows", "Disable entity shadow rendering", ()-> bool(o().getEntityShadows().getValue()),
+            d -> o().getEntityShadows().setValue(!o().getEntityShadows().getValue())),
+        new Entry("Smooth Lighting", "Ambient occlusion (AO)", ()-> bool(o().getAo().getValue()),
+            d -> o().getAo().setValue(!o().getAo().getValue())),
+        new Entry("Biome Blend", "Less color blending means less work", ()-> String.valueOf(o().getBiomeBlendRadius().getValue()),
+            d -> o().getBiomeBlendRadius().setValue(clamp(o().getBiomeBlendRadius().getValue()+d,0,7))),
+        new Entry("Entity Distance", "Client render distance for entities", ()-> Math.round(o().getEntityDistanceScaling().getValue()*100)+"%",
+            d -> o().getEntityDistanceScaling().setValue(clamp(o().getEntityDistanceScaling().getValue()+d*0.25,0.5,2.0))),
+        new Entry("VSync", "Synchronize frames with monitor refresh", ()-> bool(o().getEnableVsync().getValue()),
+            d -> o().getEnableVsync().setValue(!o().getEnableVsync().getValue())),
+        new Entry("Mipmap Levels", "Lowering levels may reduce GPU usage", ()-> String.valueOf(o().getMipmapLevels().getValue()),
+            d -> o().getMipmapLevels().setValue(clamp(o().getMipmapLevels().getValue()+d,0,4))),
+        new Entry("Distortion FX", "Screen distortion intensity (visual comfort)", ()-> Math.round(o().getDistortionEffectScale().getValue()*100)+"%",
+            d -> o().getDistortionEffectScale().setValue(clamp(o().getDistortionEffectScale().getValue()+d*0.25,0,1))),
+        new Entry("FOV Effects", "Speed-change field-of-view intensity", ()-> Math.round(o().getFovEffectScale().getValue()*100)+"%",
+            d -> o().getFovEffectScale().setValue(clamp(o().getFovEffectScale().getValue()+d*0.25,0,1)))
+    );
+    private static GameOptions o(){ return MinecraftClient.getInstance().options; }
+    private static String bool(boolean v){return v?"ON":"OFF";}
+    private static int clamp(int v,int a,int b){return Math.max(a,Math.min(b,v));}
+    private static double clamp(double v,double a,double b){return Math.max(a,Math.min(b,v));}
+    public static void adjust(int index,int direction){
+        if(index<0||index>=OPTIONS.size())return;
+        OPTIONS.get(index).adjust().accept(direction);
+        o().write();
+    }
+    public static void apply(String mode){
+        GameOptions x=o();
+        switch(mode){
+            case "MAX FPS" -> {
+                x.getViewDistance().setValue(6); x.getGraphicsMode().setValue(GraphicsMode.FAST);
+                x.getParticles().setValue(ParticlesMode.MINIMAL); x.getCloudRenderMode().setValue(CloudRenderMode.OFF);
+                x.getEntityShadows().setValue(false); x.getAo().setValue(false); x.getBiomeBlendRadius().setValue(0);
+                x.getEntityDistanceScaling().setValue(0.5); x.getEnableVsync().setValue(false);
+            }
+            case "BALANCED" -> {
+                x.getViewDistance().setValue(10); x.getGraphicsMode().setValue(GraphicsMode.FAST);
+                x.getParticles().setValue(ParticlesMode.DECREASED); x.getCloudRenderMode().setValue(CloudRenderMode.OFF);
+                x.getEntityShadows().setValue(false); x.getAo().setValue(true); x.getBiomeBlendRadius().setValue(2);
+                x.getEntityDistanceScaling().setValue(0.75);
+            }
+            case "QUALITY" -> {
+                x.getViewDistance().setValue(16); x.getGraphicsMode().setValue(GraphicsMode.FANCY);
+                x.getParticles().setValue(ParticlesMode.ALL); x.getCloudRenderMode().setValue(CloudRenderMode.FANCY);
+                x.getEntityShadows().setValue(true); x.getAo().setValue(true); x.getBiomeBlendRadius().setValue(5);
+                x.getEntityDistanceScaling().setValue(1.0);
+            }
+            default -> {return;}
+        }
+        x.write();
+    }
+}

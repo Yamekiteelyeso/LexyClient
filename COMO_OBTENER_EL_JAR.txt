@@ -1,0 +1,18 @@
+LEXY CLIENT 1.4.0 — COMPILAR .JAR
+
+Este ZIP contiene el codigo fuente. NO contiene un mod ya compilado.
+
+WINDOWS:
+1) Descomprime el ZIP completamente.
+2) Instala JDK 17 (recomendado) y comprueba que java -version funciona.
+3) Con Internet, haz doble clic en COMPILAR_JAR_WINDOWS.bat.
+4) El proceso descargara Gradle y las dependencias de Fabric/Minecraft.
+5) Si la compilacion se completa sin errores, veras lexy-client-1.4.0.jar en la misma carpeta.
+6) Instala Fabric Loader 1.20.1 y Fabric API compatibles; copia el JAR a .minecraft/mods.
+
+LINUX/macOS:
+Instala JDK 17 y Gradle 8.10.2, luego ejecuta gradle clean build.
+Busca el JAR final en build/libs/lexy-client-1.4.0.jar.
+
+Nota: Este codigo todavia no se ha compilado ni probado en un cliente real en nuestro entorno.
+La compilacion podria revelar errores de API que requieran corregirse.
