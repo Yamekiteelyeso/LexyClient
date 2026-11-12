@@ -86,6 +86,36 @@ public final class SpotifyController {
         if(AndroidBrowser.open("https://open.spotify.com/")) status="Open Spotify on phone, play a song, then tap REFRESH";
         else status="Open the Spotify app and start a song, then tap REFRESH";
     }
+    /** No developer API or OAuth used. Spotify handles free-account playback in its own app. */
+    public void openFreeSearch(String query) {
+        String clean=query==null?"":query.trim();
+        if(clean.isBlank()){status="Type a song, artist or playlist to search";return;}
+        if(clean.length()>120)clean=clean.substring(0,120);
+        String url="https://open.spotify.com/search/"+enc(clean).replace("+","%20");
+        if(AndroidBrowser.open(url))status="Opened Spotify search in your browser / app";
+        else copyPublicUrl(url);
+    }
+    public void openFreeLibrary() {
+        String url="https://open.spotify.com/collection/tracks";
+        if(AndroidBrowser.open(url))status="Opened your Spotify library";
+        else copyPublicUrl(url);
+    }
+    /** Explicitly open a track; free accounts retain Spotify's own playback limitations. */
+    public void openFreeTrack(Track track) {
+        if(track==null || !track.uri().startsWith("spotify:track:"))return;
+        String id=track.uri().substring("spotify:track:".length());
+        if(!id.matches("[A-Za-z0-9]{10,30}")){status="Invalid Spotify track";return;}
+        String url="https://open.spotify.com/track/"+id;
+        if(AndroidBrowser.open(url))status="Opening "+track.title()+" in Spotify";
+        else copyPublicUrl(url);
+    }
+    private void copyPublicUrl(String url) {
+        try{
+            MinecraftClient mc=MinecraftClient.getInstance();
+            if(mc!=null){mc.keyboard.setClipboard(url);status="Spotify link copied to clipboard";}
+            else status="Open "+url;
+        }catch(Throwable ignored){status="Open "+url;}
+    }
     public void completeFromClipboard(){
         try {
             MinecraftClient mc=MinecraftClient.getInstance();

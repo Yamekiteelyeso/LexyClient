@@ -15,10 +15,11 @@ public final class LexyScreen extends Screen {
     private final boolean editor;
     private int tab, scroll=0, navScroll=0, selected=-1, dragDX=0, dragDY=0;
     private final Screen parent;
-    private boolean dragging=false, totemSettingsOpen=false;
+    private boolean dragging=false, totemSettingsOpen=false, triggerSettingsOpen=false, spotifyFreeView=true;
+    private int cheatSection=0; // 0 AutoTotem, 1 TriggerBot
     private int spotifyView=0; // 0=tracks, 1=devices, 2=playlists
     private String query="";
-    private TextFieldWidget search,spotifyClientId,spotifySearch,spotifyRedirect;
+    private TextFieldWidget search,spotifyClientId,spotifySearch,spotifyRedirect,spotifyFreeSearch;
     private int panelX,panelY,panelW,panelH,sidebarW;
     private float menuScale=1f;
     private String spotifyHint="";
@@ -47,6 +48,8 @@ public final class LexyScreen extends Screen {
         spotifyRedirect.setMaxLength(4096);spotifyRedirect.setPlaceholder(Text.literal("Paste http://127.0.0.1:43871/callback?..."));addDrawableChild(spotifyRedirect);
         spotifySearch=new TextFieldWidget(textRenderer,rx+11,panelY+149,Math.max(95,rw-100),20,Text.literal("Search tracks"));
         spotifySearch.setMaxLength(80);spotifySearch.setPlaceholder(Text.literal("Search songs or artists..."));addDrawableChild(spotifySearch);
+        spotifyFreeSearch=new TextFieldWidget(textRenderer,rx+11,panelY+173,Math.max(95,rw-22),23,Text.literal("Free Spotify search"));
+        spotifyFreeSearch.setMaxLength(120);spotifyFreeSearch.setPlaceholder(Text.literal("Song, artist or playlist..."));addDrawableChild(spotifyFreeSearch);
         updateTextFields();
     }
     private int accent(){return LexyClient.accent();}
@@ -64,9 +67,11 @@ public final class LexyScreen extends Screen {
     private int pages(int n){return Math.max(1,(int)Math.ceil(n/(double)Math.max(1,capacity())));}
     private void updateTextFields(){
         if(search!=null)search.visible=!editor&&tab<=4;
-        if(spotifyClientId!=null)spotifyClientId.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected();
+        if(spotifyClientId!=null)spotifyClientId.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected()&&!spotifyFreeView;
         if(spotifySearch!=null)spotifySearch.visible=!editor&&tab==7&&SpotifyController.INSTANCE.isConnected();
-        if(spotifyRedirect!=null)spotifyRedirect.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected();
+        if(spotifyRedirect!=null)spotifyRedirect.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected()&&!spotifyFreeView;
+        if(spotifyFreeSearch!=null)spotifyFreeSearch.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected()&&spotifyFreeView;
+        if(spotifyFreeSearch!=null&&!spotifyFreeSearch.visible)spotifyFreeSearch.setFocused(false);
         if(search!=null&&!search.visible)search.setFocused(false);
         if(spotifySearch!=null&&!spotifySearch.visible)spotifySearch.setFocused(false);
         if(spotifyClientId!=null&&!spotifyClientId.visible)spotifyClientId.setFocused(false);
@@ -101,7 +106,7 @@ public final class LexyScreen extends Screen {
         String needle=query.trim().toLowerCase(Locale.ROOT);
         ArrayList<LexyClient.Module> list=new ArrayList<>();
         for(LexyClient.Module m:LexyClient.MODULES){
-            if ("AutoTotem".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
+            if ("AutoTotem".equals(m.category()) || "TriggerBot".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
             // All Modules is a compact list of actual toggleable HUD indicators, not 80 fake switches.
             if(tab==0 && !HudRenderer.isRelevant(m))continue;
             if(tab>0&&tab<=4&&!m.category().equals(TABS[tab]))continue;
@@ -150,19 +155,19 @@ public final class LexyScreen extends Screen {
         int rx=rightX(),rw=rightW();
         rounded(c,rx,panelY+12,rw,43,PANEL);
         rect(c,rx,panelY+20,2,24,accent());
-        String title=editor?"HUD Layout":tab==5?"Video Settings":tab==6?"Performance":tab==7?"Spotify":tab==8?"Local Music":tab==9?"Appearance":tab==10?"Cheats / AutoTotem":TABS[tab];
+        String title=editor?"HUD Layout":tab==5?"Video Settings":tab==6?"Performance":tab==7?"Spotify":tab==8?"Local Music":tab==9?"Appearance":tab==10?"Cheats":TABS[tab];
         label(c,title,rx+12,panelY+20,rw-177,WHITE);
         rounded(c,rx+rw-157,panelY+18,107,27,0xFF294968);
         label(c,"EDIT HUD",rx+rw-138,panelY+27,80,WHITE);
         rounded(c,rx+rw-44,panelY+18,35,27,0xFF313746);
         label(c,"X",rx+rw-30,panelY+27,14,WHITE);
-        label(c,editor?"Drag readouts to position them":tab==6?"Real Minecraft graphics options":tab==7?"Connect your Spotify account securely":tab==8?"Audio runs inside Minecraft - no other app":tab==9?"Theme, overlay and density settings":tab==10?"AutoTotem controls and configuration":"Enable modules and readouts; switch categories below",rx+12,panelY+35,rw-20,MUTED);
+        label(c,editor?"Drag readouts to position them":tab==6?"Real Minecraft graphics options":tab==7?"Connect your Spotify account securely":tab==8?"Audio runs inside Minecraft - no other app":tab==9?"Theme, overlay and density settings":tab==10?"Combat utilities and configuration":"Enable modules and readouts; switch categories below",rx+12,panelY+35,rw-20,MUTED);
         if(editor)renderEditor(c,logicalMX,logicalMY);
         else if(modular())renderModules(c,logicalMX,logicalMY);
         else if(tab==5||tab==6)renderOptimization(c,logicalMX,logicalMY);
         else if(tab==7)renderSpotify(c,logicalMX,logicalMY);
         else if(tab==8)renderLocalMusic(c,logicalMX,logicalMY);
-        else if(tab==10)renderAutoTotem(c,logicalMX,logicalMY);
+        else if(tab==10)renderCheats(c,logicalMX,logicalMY);
         else renderStyle(c,logicalMX,logicalMY);
         updateTextFields();
         super.render(c,logicalMX,logicalMY,dt);
@@ -229,6 +234,25 @@ public final class LexyScreen extends Screen {
     private void renderSpotify(DrawContext c,int mx,int my){
         int rx=rightX(),rw=rightW(),top=panelY+63;
         SpotifyController sp=SpotifyController.INSTANCE;
+        if(!sp.isConnected() && spotifyFreeView){
+            rounded(c,rx+11,top+3,rw-22,51,PANEL);
+            rect(c,rx+11,top+8,3,40,0xFF1DB954);
+            label(c,"SPOTIFY FREE",rx+22,top+13,rw-43,WHITE);
+            label(c,"No developer app or login in LexyClient",rx+22,top+32,rw-43,MUTED);
+            label(c,"Search Spotify on your phone or computer:",rx+13,top+88,rw-26,MUTED);
+            rounded(c,rx+11,top+143,rw-22,30,0xFF1C7049);
+            label(c,"SEARCH IN SPOTIFY",rx+23,top+154,rw-39,WHITE);
+            int freeY=top+181,freeW=(rw-34)/2;
+            rounded(c,rx+11,freeY,freeW,30,SURFACE);
+            label(c,"OPEN SPOTIFY",rx+20,freeY+10,freeW-13,WHITE);
+            rounded(c,rx+18+freeW,freeY,rw-freeW-29,30,SURFACE);
+            label(c,"YOUR LIBRARY",rx+27+freeW,freeY+10,rw-freeW-43,WHITE);
+            rounded(c,rx+11,top+238,rw-22,30,PANEL);
+            label(c,"API LOGIN / ADVANCED CONTROLS",rx+23,top+248,rw-40,0xFF9DD4FF);
+            label(c,"Free mode opens the official Spotify app or website.",rx+12,top+294,rw-23,MUTED);
+            label(c,"Playback stays in Spotify and follows Free plan rules.",rx+12,top+310,rw-23,MUTED);
+            return;
+        }
         if(!sp.isConnected()){
             label(c,"ACCOUNT CONNECTION",rx+12,top+3,rw-24,WHITE);
             label(c,"Enter your Spotify Developer Client ID",rx+12,top+16,rw-24,MUTED);
@@ -250,6 +274,8 @@ public final class LexyScreen extends Screen {
                 label(c,"Redirect: "+sp.redirectUri(),rx+12,top+309,rw-25,MUTED);
                 label(c,"Developer apps need Premium + authorized Spotify user.",rx+12,top+324,rw-25,MUTED);
                 label(c,"Music plays in Spotify, not inside Minecraft.",rx+12,top+339,rw-25,MUTED);
+                rounded(c,rx+11,top+354,rw-22,28,SURFACE);
+                label(c,"USE FREE SPOTIFY INSTEAD",rx+20,top+364,rw-36,WHITE);
             }
             return;
         }
@@ -367,9 +393,54 @@ public final class LexyScreen extends Screen {
         }
         c.disableScissor();
     }
+    private static final int TRIGGER_ROWS=8;
+    private void renderCheats(DrawContext c,int mx,int my){
+        int x=rightX(),w=rightW(),top=panelY+66,bw=(w-22)/2;
+        rounded(c,x+7,top,bw-4,27,cheatSection==0?0xFF2E516E:SURFACE);
+        label(c,"AUTOTOTEM",x+17,top+9,bw-24,WHITE);
+        rounded(c,x+7+bw,top,w-bw-15,27,cheatSection==1?0xFF2E516E:SURFACE);
+        label(c,"TRIGGERBOT",x+18+bw,top+9,w-bw-31,WHITE);
+        if(cheatSection==0)renderAutoTotem(c,mx,my);
+        else renderTriggerBot(c,mx,my);
+    }
+    private void renderTriggerBot(DrawContext c,int mx,int my){
+        int x=rightX(),w=rightW(),top=panelY+102;
+        rounded(c,x,top,w,71,0xFF1B2837);rect(c,x,top,4,71,accent());
+        label(c,"TriggerBot | "+TriggerBot.status(),x+13,top+10,w-25,WHITE);
+        label(c,"Only crosshair targets / vanilla combat range",x+13,top+26,w-24,MUTED);
+        int toggleX=x+9,buttonY=top+42,bw=Math.max(60,(w-26)/2);
+        rounded(c,toggleX,buttonY,bw,24,LexyClient.enabled.getOrDefault("TriggerBot",false)?0xFF245A86:SURFACE);
+        label(c,LexyClient.enabled.getOrDefault("TriggerBot",false)?"ENABLED - TAP TO OFF":"DISABLED - TAP TO ON",toggleX+8,buttonY+8,bw-15,WHITE);
+        rounded(c,toggleX+bw+7,buttonY,w-bw-25,24,triggerSettingsOpen?0xFF2D638A:SURFACE);
+        label(c,triggerSettingsOpen?"HIDE SETTINGS":"CONFIGURE",toggleX+bw+15,buttonY+8,w-bw-40,WHITE);
+        if(!triggerSettingsOpen){
+            label(c,"Target selection, timing and weapon conditions.",x+8,top+94,w-16,MUTED);
+            label(c,"OFF by default; enable only where permitted.",x+8,top+114,w-16,MUTED);
+            return;
+        }
+        String[] names={"TARGETS", "CLICKS PER SECOND", "CHARGED HITS", "MIN CHARGE", "SWORD/AXE ONLY", "REQUIRE SNEAK", "IGNORE TEAMMATES", "MAX DISTANCE"};
+        String[] values={TriggerBot.targets.name(),TriggerBot.clicksPerSecond+" CPS",TriggerBot.requireChargedHit?"YES":"NO",TriggerBot.cooldownPercent+"%",TriggerBot.requireWeapon?"YES":"NO",TriggerBot.requireSneak?"YES":"NO",TriggerBot.ignoreTeam?"YES":"NO",String.format(Locale.ROOT,"%.1f",TriggerBot.reachTenths/10f)+" m"};
+        int start=top+81,end=panelY+panelH-65;
+        int visible=Math.min(TRIGGER_ROWS,Math.max(1,(end-start)/48));
+        scroll=Math.max(0,Math.min(scroll,Math.max(0,TRIGGER_ROWS-visible)));
+        clip(c,x,start,x+w,end);
+        for(int i=scroll;i<Math.min(TRIGGER_ROWS,scroll+visible);i++){
+            int y=start+(i-scroll)*48;
+            rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            label(c,names[i],x+19,y+16,w-145,WHITE);
+            rounded(c,x+w-113,y+8,98,25,SURFACE);
+            label(c,values[i],x+w-104,y+16,86,WHITE);
+        }
+        c.disableScissor();
+        int navY=panelY+panelH-60;
+        rounded(c,x+7,navY,65,25,scroll>0?SURFACE:OUTLINE);label(c,"< UP",x+18,navY+9,50,WHITE);
+        rounded(c,x+w-74,navY,67,25,scroll<Math.max(0,TRIGGER_ROWS-visible)?SURFACE:OUTLINE);
+        label(c,"DOWN >",x+w-67,navY+9,57,WHITE);
+        label(c,"Settings "+(scroll+1)+"-"+Math.min(TRIGGER_ROWS,scroll+visible)+" / "+TRIGGER_ROWS,x+80,navY+9,w-164,MUTED);
+    }
     private static final int TOTEM_ROWS=10;
     private void renderAutoTotem(DrawContext c,int mx,int my){
-        int x=rightX(),w=rightW(),top=panelY+68;
+        int x=rightX(),w=rightW(),top=panelY+102;
         rounded(c,x,top,w,71,0xFF112F52);rect(c,x,top,4,71,accent());
         label(c,"AutoTotem | "+AutoTotem.status(),x+13,top+10,w-25,WHITE);
         label(c,"Direct swap or visible inventory sequence",x+13,top+26,w-24,MUTED);
@@ -515,8 +586,25 @@ public final class LexyScreen extends Screen {
             }
         }else if(tab==7){
             SpotifyController spotify=SpotifyController.INSTANCE;
+            if(!spotify.isConnected() && spotifyFreeView){
+                int top=panelY+63,freeW=(rw-34)/2;
+                if(inside(mx,my,rx+11,top+143,rw-22,30)){
+                    spotify.openFreeSearch(spotifyFreeSearch.getText());return true;
+                }
+                if(inside(mx,my,rx+11,top+181,freeW,30)){spotify.openPlayer();return true;}
+                if(inside(mx,my,rx+18+freeW,top+181,rw-freeW-29,30)){
+                    spotify.openFreeLibrary();return true;
+                }
+                if(inside(mx,my,rx+11,top+238,rw-22,30)){
+                    spotifyFreeView=false;updateTextFields();LexySounds.navigate();return true;
+                }
+                return super.mouseClicked(mx,my,button);
+            }
             if(!spotify.isConnected()){
                 int top=panelY+63,buttonW=(rw-35)/2,loginY=top+50;
+                if(panelH>440 && inside(mx,my,rx+11,top+354,rw-22,28)){
+                    spotifyFreeView=true;updateTextFields();LexySounds.navigate();return true;
+                }
                 if(inside(mx,my,rx+11,loginY,buttonW,28)){
                     if(spotify.pending()) {spotify.cancelLogin();LexySounds.deny();}
                     else {LexyClient.spotifyClientId=spotifyClientId.getText().trim();LexyClient.save();
@@ -593,7 +681,46 @@ public final class LexyScreen extends Screen {
                 if(idx<player.tracks().size()){player.play(idx);return true;}
             }
         }else if(tab==10){
-            int top=panelY+68,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
+            int switchY=panelY+66,switchWidth=(rw-22)/2;
+            if(inside(mx,my,rx+7,switchY,switchWidth-4,27)){
+                cheatSection=0;scroll=0;LexySounds.navigate();return true;
+            }
+            if(inside(mx,my,rx+7+switchWidth,switchY,rw-switchWidth-15,27)){
+                cheatSection=1;scroll=0;LexySounds.navigate();return true;
+            }
+            if(cheatSection==1){
+                int top=panelY+102,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
+                if(inside(mx,my,rx+9,buttonY,bw,24)){
+                    boolean next=!LexyClient.enabled.getOrDefault("TriggerBot",false);
+                    LexyClient.enabled.put("TriggerBot",next);TriggerBot.reset();
+                    LexyClient.save();LexySounds.toggle();return true;
+                }
+                if(inside(mx,my,rx+9+bw+7,buttonY,rw-bw-25,24)){
+                    triggerSettingsOpen=!triggerSettingsOpen;scroll=0;return true;
+                }
+                if(triggerSettingsOpen){
+                    int yy=top+81,row=48,end=panelY+panelH-65;
+                    int visible=Math.min(TRIGGER_ROWS,Math.max(1,(end-yy)/row));
+                    int max=Math.max(0,TRIGGER_ROWS-visible),navY=panelY+panelH-60;
+                    if(inside(mx,my,rx+7,navY,65,25)){scroll=Math.max(0,scroll-1);return true;}
+                    if(inside(mx,my,rx+rw-74,navY,67,25)){scroll=Math.min(max,scroll+1);return true;}
+                    for(int i=scroll;i<Math.min(TRIGGER_ROWS,scroll+visible);i++)if(inside(mx,my,rx+7,yy+(i-scroll)*row,rw-16,41)){
+                        switch(i){
+                            case 0->TriggerBot.targets=TriggerBot.Targets.values()[(TriggerBot.targets.ordinal()+1)%TriggerBot.Targets.values().length];
+                            case 1->TriggerBot.clicksPerSecond=TriggerBot.clicksPerSecond>=12?1:TriggerBot.clicksPerSecond+1;
+                            case 2->TriggerBot.requireChargedHit=!TriggerBot.requireChargedHit;
+                            case 3->TriggerBot.cooldownPercent=TriggerBot.cooldownPercent>=100?40:TriggerBot.cooldownPercent+5;
+                            case 4->TriggerBot.requireWeapon=!TriggerBot.requireWeapon;
+                            case 5->TriggerBot.requireSneak=!TriggerBot.requireSneak;
+                            case 6->TriggerBot.ignoreTeam=!TriggerBot.ignoreTeam;
+                            case 7->TriggerBot.reachTenths=TriggerBot.reachTenths>=30?20:TriggerBot.reachTenths+1;
+                        }
+                        TriggerBot.reset();LexyClient.save();LexySounds.save();return true;
+                    }
+                }
+                return true;
+            }
+            int top=panelY+102,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
             if(inside(mx,my,rx+9,buttonY,bw,24)){
                 boolean next=!LexyClient.enabled.getOrDefault("AutoTotem",false);
                 LexyClient.enabled.put("AutoTotem",next);
@@ -699,7 +826,10 @@ public final class LexyScreen extends Screen {
             }
             else if(tab==8)max=Math.max(0,LocalMusicPlayer.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+248))/31));
             else if(tab==9)max=Math.max(0,17-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
-            else if(tab==10)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+149))/48)):0;
+            else if(tab==10){
+                if(cheatSection==0)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+                else max=triggerSettingsOpen?Math.max(0,TRIGGER_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+            }
             scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
         }return super.mouseScrolled(mx,my,amount);
     }
