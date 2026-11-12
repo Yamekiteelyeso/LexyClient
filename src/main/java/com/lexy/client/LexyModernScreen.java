@@ -84,6 +84,11 @@ public final class LexyModernScreen extends Screen {
             if(!compact())caption(c,CATEGORIES[i],px+42,yy+10,rail-51,active?LexyPaint.WHITE:LexyPaint.MUTED);
         }
         c.disableScissor();
+        if(CATEGORIES.length>navCap){
+            int half=Math.max(15,(rail-16)/2);
+            LexyPaint.pill(c,compact()?"^":"UP",px+7,py+ph-67,half,19,false);
+            LexyPaint.pill(c,compact()?"v":"DOWN",px+9+half,py+ph-67,half,19,false);
+        }
         caption(c,compact()?"L":"LEXY / ONLINE",px+11,py+ph-39,rail-17,theme.accent());
         if(!compact())caption(c,"RSHIFT  /  F8",px+11,py+ph-24,rail-17,LexyPaint.DIM);
         // Header and page title.
@@ -222,6 +227,12 @@ public final class LexyModernScreen extends Screen {
         if(LexyPaint.hit(mx,my,px+4,navTop,rail-6,Math.min(navCap,12)*32)){
             int i=navScroll+(int)((my-navTop)/32);
             if(i>=0&&i<CATEGORIES.length)switchCategory(CATEGORIES[i]);return true;
+        }
+        if(LexyPaint.hit(mx,my,px+7,py+ph-67,rail-12,20)){
+            int cap=Math.max(1,(ph-130)/32);
+            if(mx<px+rail/2)navScroll=Math.max(0,navScroll-1);
+            else navScroll=Math.min(Math.max(0,CATEGORIES.length-cap),navScroll+1);
+            return true;
         }
         if(selected!=null){
             if(LexyPaint.hit(mx,my,cx+6,viewTop+4,160,26)){selected=null;updateFields();return true;}
