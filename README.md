@@ -1,13 +1,13 @@
-# LexyClient 2.4.0 — Fabric 1.20.1
+# LexyClient 2.5 — Blue Slate Edition
 
-Requires Minecraft Java 1.20.1, Java 17, Fabric Loader and Fabric API.
+Fabric 1.20.1 client mod for Java 17, PC and PojavLauncher.
 
-- PC + Pojav-friendly menu, drag-and-drop HUD, optimized overlays, graphics options and original OGG UI sound pack.
-- Spotify Free web mode: opens searches, library and Spotify official browser/app links without OAuth. This does **not** control playback from Minecraft or bypass Spotify plan limits.
-- Spotify Web API PKCE mode: premium/allowlist restrictions as defined by Spotify; session persistence and token refresh from Lexy 2.3.
-- Separate opt-in TriggerBot under Cheats, configurable targets, attack interval/cooldown, range and weapon/sneak/team conditions, using vanilla melee interactions.
-- AutoTotem retained with direct and inventory approaches.
+## Changes
+- AutoTotem inventory is a single atomic vanilla offhand SWAP and opens only when the player is idle; combat fallback uses DIRECT without opening menus. Configurable safe idle and fallback.
+- TriggerBot guards manual mouse clicks, checks crosshair line of sight, distance, cooldown and optional hold-key.
+- Real rebindable key controls (Minecraft Settings > Controls) for AutoTotem, TriggerBot, hold-to-trigger, and Zoom, plus four single-press chat/command macros configured through LexyClient > Keybinds.
+- Hold or toggle Zoom with safe FOV restoration.
+- Pojav low-graphics preset and an optional conservative adaptive-FPS governor. No false FPS boost claims.
+- In-game Local Music now accepts standard MP3 files using bundled Java Sound decoder, plus WAV/AIFF; Spotify's own licensed music streaming still requires official Spotify clients or Premium-capable APIs.
 
-Build: `gradle build` with Gradle 8.11.1 / JDK 17. Install the remapped `build/libs/lexy-client-2.4.0.jar` into `mods`. Remove prior LexyClient JARs.
-
-No guarantee of server acceptance or Pojav runtime compatibility without testing on the target device.
+Compiled using Gradle 8.11.1 via GitHub Actions. Full Minecraft/Pojav gameplay tests are needed separately.

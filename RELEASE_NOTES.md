@@ -1,18 +1,9 @@
-# LexyClient 2.4.0 — Spotify Free + TriggerBot
-
-## Spotify
-- Checked the user-provided SpotiCraft 1.20.1 mod. Its bytecode explicitly checks the account's `premium` status and renders a `noPremium` page. Thus SpotiCraft itself does not offer unrestricted free playback control.
-- Added a genuine **Free Spotify** browser mode which does not need a Spotify Developer Client ID or Spotify API authorization. Search in the official Spotify app/browser, open the Spotify app or library; Spotify itself handles free playback and advertisements.
-- Keeps the separate PKCE / OAuth Spotify API mode with stored refresh token for eligible users. Does not circumvent official API rules.
-- Official Spotify's development API now requires the app owner to have Premium, and transport commands require Premium.
-
-## Cheats — TriggerBot
-- Separate TriggerBot tab inside Cheats; default OFF.
-- Automatic melee click for visible living targets under the crosshair, using vanilla interaction manager.
-- Filters: players/mobs/both; maximum conservative range 2.0–3.0 meters; optional sword/axe requirement; option to ignore teammates and to require sneaking.
-- Configurable CPS 1–12 and charged attack minimum percentage. Options saved in config/lexy-client.json.
-- Does not target entities through walls or extend vanilla melee range.
-
-## Compatibility
-- Retains existing AutoTotem, movable clean HUD, 11 original UI sounds and scalable UI for Minecraft 1.20.1 Fabric, PC and Pojav.
-- No runtime Minecraft or real Spotify account test was performed; GitHub Actions compilation is used for Java/Fabric compatibility.
+# LexyClient 2.5.0
+- AutoTotem guarded by input idle and direct emergency fallback; inventory mode uses atomic SWAP and cursor-safe close.
+- TriggerBot ignores manual clicks and line-of-sight obstructions, and supports a dedicated hold key.
+- Custom keybind editor; per-module toggles, hold trigger, Zoom and 4 chat command macros.
+- Dynamic Zoom with FOV restoration and configurable percentage/mode.
+- Pojav graphics preset, simulation distance setting, opt-in adaptive FPS governor.
+- In-game playback of locally stored MP3 with mp3spi/jlayer, in addition to WAV and AIFF.
+- More coherent blue/grey GUI with dedicated Keybinds navigation and zoom controls.
+- Spotify Free still cannot stream full Spotify audio inside the mod without permitted access. No bypass or DRM extraction.

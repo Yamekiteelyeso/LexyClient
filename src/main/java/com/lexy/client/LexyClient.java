@@ -58,7 +58,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();HudRenderer.invalidate();save();
  }
 
- private static final int CONFIG_VERSION = 240;
+ private static final int CONFIG_VERSION = 250;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -186,8 +186,8 @@ public final class LexyClient implements ClientModInitializer {
 
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
- @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
- ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));AutoTotem.tick(client);TriggerBot.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+ @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
+ ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);AutoTotem.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
@@ -195,7 +195,7 @@ public final class LexyClient implements ClientModInitializer {
   if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen||mc.currentScreen instanceof HudEditorScreen)return;
   HudRenderer.render(context,false,null);
  });
- net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();});
+ net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);});
  }
  public static void save(){try{Files.createDirectories(CONFIG.getParent());JsonObject root=new JsonObject();JsonObject mods=new JsonObject();enabled.forEach(mods::addProperty);root.add("modules",mods);JsonObject coords=new JsonObject();positions.forEach(coords::addProperty);root.add("positions",coords);root.addProperty("configVersion",CONFIG_VERSION);
  JsonObject style=new JsonObject();style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
@@ -206,7 +206,7 @@ public final class LexyClient implements ClientModInitializer {
  style.addProperty("hudPreset",hudPreset);style.addProperty("hudMinimal",hudMinimal);style.addProperty("hudShadow",hudShadow);style.addProperty("compactHud",compactHud);style.addProperty("spotifyHud",spotifyHud);
  style.addProperty("lowHealthThreshold",lowHealthThreshold);style.addProperty("armorWarnPercent",armorWarnPercent);style.addProperty("hudTextColor",hudTextColor);
  JsonObject totem=new JsonObject();totem.addProperty("onlyWhenEmpty",AutoTotem.onlyWhenEmpty);totem.addProperty("lowHealthOnly",AutoTotem.lowHealthOnly);totem.addProperty("healthThreshold",AutoTotem.healthThreshold);
- totem.addProperty("mode",AutoTotem.mode.name());totem.addProperty("randomSource",AutoTotem.randomSource);
+ totem.addProperty("mode",AutoTotem.mode.name());totem.addProperty("randomSource",AutoTotem.randomSource);totem.addProperty("combatFallbackDirect",AutoTotem.combatFallbackDirect);totem.addProperty("safeIdleMs",AutoTotem.safeIdleMs);
  totem.addProperty("minDelayMs",AutoTotem.minDelayMs);totem.addProperty("maxDelayMs",AutoTotem.maxDelayMs);
  totem.addProperty("inventoryStepMs",AutoTotem.inventoryStepMs);totem.addProperty("cooldownMs",AutoTotem.cooldownMs);
  totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
@@ -217,8 +217,8 @@ public final class LexyClient implements ClientModInitializer {
  trigger.addProperty("requireWeapon",TriggerBot.requireWeapon);
  trigger.addProperty("requireSneak",TriggerBot.requireSneak);
  trigger.addProperty("ignoreTeam",TriggerBot.ignoreTeam);
- trigger.addProperty("requireChargedHit",TriggerBot.requireChargedHit);
- root.add("triggerBot",trigger);
+ trigger.addProperty("requireChargedHit",TriggerBot.requireChargedHit);trigger.addProperty("requireHold",TriggerBot.requireHold);trigger.addProperty("avoidManualClicks",TriggerBot.avoidManualClicks);
+ root.add("triggerBot",trigger);JsonObject zoom=new JsonObject();zoom.addProperty("percent",ZoomController.zoomPercent);zoom.addProperty("toggleMode",ZoomController.toggleMode);root.add("zoom",zoom);root.addProperty("adaptiveFps",OptimizationManager.adaptiveEnabled);
  root.add("style",style);root.addProperty("spotifyClientId",spotifyClientId);
  root.addProperty("localMusicVolume",LocalMusicPlayer.INSTANCE.volume());root.addProperty("localMusicLoop",LocalMusicPlayer.INSTANCE.looping());
  Files.writeString(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
@@ -253,6 +253,8 @@ public final class LexyClient implements ClientModInitializer {
  if(t.has("intervalTicks")&&!t.has("cooldownMs"))AutoTotem.cooldownMs=Math.max(200,Math.min(2500,t.get("intervalTicks").getAsInt()*50));
  if(t.has("mode"))try{AutoTotem.mode=AutoTotem.Mode.valueOf(t.get("mode").getAsString());}catch(IllegalArgumentException ignored){}
  if(t.has("randomSource"))AutoTotem.randomSource=t.get("randomSource").getAsBoolean();
+ if(t.has("combatFallbackDirect"))AutoTotem.combatFallbackDirect=t.get("combatFallbackDirect").getAsBoolean();
+ if(t.has("safeIdleMs"))AutoTotem.safeIdleMs=Math.max(250,Math.min(2500,t.get("safeIdleMs").getAsInt()));
  if(t.has("minDelayMs"))AutoTotem.minDelayMs=Math.max(50,Math.min(1500,t.get("minDelayMs").getAsInt()));
  if(t.has("maxDelayMs"))AutoTotem.maxDelayMs=Math.max(AutoTotem.minDelayMs,Math.min(2500,t.get("maxDelayMs").getAsInt()));
  if(t.has("inventoryStepMs"))AutoTotem.inventoryStepMs=Math.max(100,Math.min(1100,t.get("inventoryStepMs").getAsInt()));
@@ -266,7 +268,11 @@ public final class LexyClient implements ClientModInitializer {
  if(t.has("requireWeapon"))TriggerBot.requireWeapon=t.get("requireWeapon").getAsBoolean();
  if(t.has("requireSneak"))TriggerBot.requireSneak=t.get("requireSneak").getAsBoolean();
  if(t.has("ignoreTeam"))TriggerBot.ignoreTeam=t.get("ignoreTeam").getAsBoolean();
- if(t.has("requireChargedHit"))TriggerBot.requireChargedHit=t.get("requireChargedHit").getAsBoolean();}
+ if(t.has("requireChargedHit"))TriggerBot.requireChargedHit=t.get("requireChargedHit").getAsBoolean();
+ if(t.has("requireHold"))TriggerBot.requireHold=t.get("requireHold").getAsBoolean();
+ if(t.has("avoidManualClicks"))TriggerBot.avoidManualClicks=t.get("avoidManualClicks").getAsBoolean();}
+ if(root.has("zoom")){JsonObject z=root.getAsJsonObject("zoom");if(z.has("percent"))ZoomController.zoomPercent=Math.max(15,Math.min(70,z.get("percent").getAsInt()));if(z.has("toggleMode"))ZoomController.toggleMode=z.get("toggleMode").getAsBoolean();}
+ if(root.has("adaptiveFps"))OptimizationManager.adaptiveEnabled=root.get("adaptiveFps").getAsBoolean();
  if(root.has("spotifyClientId"))spotifyClientId=root.get("spotifyClientId").getAsString();
  if(root.has("localMusicVolume"))localMusicVolume=Math.max(0,Math.min(100,root.get("localMusicVolume").getAsInt()));
  if(root.has("localMusicLoop"))localMusicLoop=root.get("localMusicLoop").getAsBoolean();

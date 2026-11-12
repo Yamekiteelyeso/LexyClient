@@ -45,7 +45,7 @@ public final class LocalMusicPlayer {
                 tracks = files.filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
                     .filter(p -> {
                         String name = p.getFileName().toString().toLowerCase(Locale.ROOT);
-                        return name.endsWith(".wav") || name.endsWith(".aiff") || name.endsWith(".aif") || name.endsWith(".au");
+                        return name.endsWith(".mp3") || name.endsWith(".wav") || name.endsWith(".aiff") || name.endsWith(".aif") || name.endsWith(".au");
                     }).sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT))).limit(300).toList();
             }
             status = tracks.size() + " music files available";

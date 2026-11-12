@@ -8,6 +8,10 @@ dependencies {
  mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
  modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
  modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+ // JVM Service Provider for .mp3 files; bundled as Fabric jar-in-jar dependencies.
+ include implementation("com.googlecode.soundlibs:mp3spi:1.9.5.4")
+ include implementation("com.googlecode.soundlibs:jlayer:1.0.1.4")
+ include implementation("com.googlecode.soundlibs:tritonus-share:0.3.7.4")
 }
 processResources { inputs.property 'version', project.version; filesMatching('fabric.mod.json') { expand 'version': project.version } }
 tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }

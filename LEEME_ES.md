@@ -1,21 +1,12 @@
-# LexyClient 2.4.0 — PC y PojavLauncher
+# LexyClient 2.5 — Guia rapida
 
-Instala **Minecraft Java 1.20.1**, Fabric Loader, Fabric API y Java 17. Deja solamente un JAR de LexyClient dentro de `mods`.
+- Instala Fabric 1.20.1 con Java 17 y Fabric API; coloca el archivo compilado en `mods`.
+- Abre el cliente desde Shift derecho o el boton del menu de pausa.
+- `Cheats > AutoTotem`: selecciona DIRECT o INVENTORY. INVENTORY solo abre la interfaz al estar inactivo; durante el combate usa DIRECT si activaste la proteccion de combate y tu vida es baja.
+- `Cheats > TriggerBot`: habilita las condiciones de disparo; evita clics del raton cuando se usan ataques manuales.
+- `Keybinds`: configura teclas de cheats y macros; tambien aparecen en Minecraft > Opciones > Controles. Puedes guardar hasta cuatro comandos `/spawn` o mensajes para una sola pulsacion, con limite de frecuencia.
+- `Keybinds > Zoom`: por defecto se mantiene C pulsada para acercar. Cambia el nivel de zoom y elige entre mantener o alternar.
+- `Optimization`: selecciona preset POJAV o MAX FPS; el modo Adaptativo cambia poco a poco la distancia de renderizado cuando es necesario.
+- `Local Music`: coloca musica MP3 propia, WAV o AIFF en `.minecraft/config/lexy-music` y usa el reproductor de Minecraft. El soporte MP3 puede variar segun el audio de Pojav/Java.
 
-**Abrir:** Shift derecho o botón LexyClient del menú de pausa. Pojav puede usar los botones táctiles del menú.
-
-## Spotify gratuito
-
-Ve a `Spotify` -> `SPOTIFY FREE`. Escribe una canción y pulsa **SEARCH IN SPOTIFY** para abrir la búsqueda oficial en el navegador/app. **OPEN SPOTIFY** abre la app/sitio y **YOUR LIBRARY** abre tu biblioteca. **No necesitas Client ID ni una cuenta Premium para utilizar estos enlaces**; la reproducción, anuncios y cambios de canción se gestionan en Spotify, no dentro del mod. Si Android no puede abrir el enlace automáticamente, LexyClient intenta copiarlo al portapapeles.
-
-## Spotify mediante API
-
-El botón `API LOGIN / ADVANCED CONTROLS` da acceso al login PKCE existente. Necesita un Client ID de Spotify Developer y registrar la dirección `http://127.0.0.1:43871/callback`. Spotify exige que el propietario de una aplicación de desarrollo tenga Premium y añade usuarios autorizados. Sus comandos de reproducción a través de Web API también requieren Premium; **no hay una forma válida de hacerlos funcionar en cuentas Free imitando el antiguo SpotiCraft**.
-
-## TriggerBot
-
-Dentro de `Cheats` elige **TRIGGERBOT**, activa el módulo y pulsa **CONFIGURE**. Puedes cambiar objetivos (jugadores, mobs, ambos), CPS, requisito de ataque cargado y porcentaje, espada/hacha, tecla de agacharse, ignorar compañeros de equipo y distancia hasta 3.0 metros. Empieza desactivado. Solo actúa cuando un objetivo visible está bajo la mira. Respeta las reglas de cada servidor: puede estar prohibido.
-
-## Más opciones
-
-`Cheats > AUTOTOTEM` conserva ambos modos y tiempos. `EDIT HUD` permite posicionar FPS/ping y otros widgets. `Appearance` permite cambiar escala, estilo y volumen de los 11 sonidos.
+Spotify Free: en la GUI puedes abrir Spotify oficial, canciones y playlists. **No es posible transmitir la biblioteca protegida de Spotify dentro de Minecraft con cuenta Free** mediante su API. El reproductor Local Music no reproduce ni descarga canciones de Spotify.

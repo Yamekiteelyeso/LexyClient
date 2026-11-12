@@ -8,8 +8,33 @@ import java.util.function.*;
 /** Direct wrappers around Minecraft's actual 1.20.1 video settings. */
 public final class OptimizationManager {
     private OptimizationManager() {}
+    public static boolean adaptiveEnabled = false;
+    private static int measurements, fpsSum, secondsLow, secondsHigh;
+    private static long nextTune;
+    public static void tick(MinecraftClient mc) {
+        if(!adaptiveEnabled||mc==null||mc.player==null||mc.currentScreen!=null) return;
+        // Read a one-second average; change graphics options at most once every 25 seconds.
+        fpsSum+=Math.max(1,mc.getCurrentFps());
+        if(++measurements<20)return;
+        int avg=fpsSum/measurements;fpsSum=0;measurements=0;
+        if(avg<43){secondsLow++;secondsHigh=0;}
+        else if(avg>88){secondsHigh++;secondsLow=0;}
+        else{secondsLow=0;secondsHigh=0;}
+        long now=System.nanoTime()/1_000_000L;
+        if(now<nextTune)return;
+        if(secondsLow>=8&&o().getViewDistance().getValue()>4) {
+            o().getViewDistance().setValue(Math.max(4,o().getViewDistance().getValue()-2));
+            o().getParticles().setValue(ParticlesMode.MINIMAL);
+            o().write();secondsLow=0;nextTune=now+25000;
+        } else if(secondsHigh>=25&&o().getViewDistance().getValue()<12) {
+            o().getViewDistance().setValue(Math.min(12,o().getViewDistance().getValue()+1));
+            o().write();secondsHigh=0;nextTune=now+30000;
+        }
+    }
     public record Entry(String name, String help, Supplier<String> value, IntConsumer adjust) {}
     public static final List<Entry> OPTIONS = List.of(
+        new Entry("Simulation Distance", "Server-side simulation radius in singleplayer", ()->o().getSimulationDistance().getValue()+" chunks",
+            d->o().getSimulationDistance().setValue(clamp(o().getSimulationDistance().getValue()+d*2,4,16))),
         new Entry("Render Distance", "Chunks rendered by your client", ()-> String.valueOf(o().getViewDistance().getValue())+" chunks",
             d -> o().getViewDistance().setValue(clamp(o().getViewDistance().getValue()+d*2,2,16))),
         new Entry("FPS Limit", "Frame-rate cap; higher is not always smoother", ()-> o().getMaxFps().getValue()+" FPS",
@@ -49,6 +74,13 @@ public final class OptimizationManager {
     public static void apply(String mode){
         GameOptions x=o();
         switch(mode){
+            case "POJAV" -> {
+                x.getViewDistance().setValue(4);x.getSimulationDistance().setValue(4);
+                x.getGraphicsMode().setValue(GraphicsMode.FAST);
+                x.getParticles().setValue(ParticlesMode.MINIMAL);x.getCloudRenderMode().setValue(CloudRenderMode.OFF);
+                x.getEntityShadows().setValue(false);x.getAo().setValue(false);
+                x.getBiomeBlendRadius().setValue(0);x.getEntityDistanceScaling().setValue(0.5);x.getEnableVsync().setValue(false);
+            }
             case "MAX FPS" -> {
                 x.getViewDistance().setValue(6); x.getGraphicsMode().setValue(GraphicsMode.FAST);
                 x.getParticles().setValue(ParticlesMode.MINIMAL); x.getCloudRenderMode().setValue(CloudRenderMode.OFF);
