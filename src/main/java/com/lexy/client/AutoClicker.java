@@ -95,7 +95,7 @@ public final class AutoClicker {
             }
         }
         if (rightClickItems && !mc.player.getMainHandStack().isEmpty()){
-            if(mc.interactionManager.interactItem(mc.player,Hand.MAIN_HAND).getResult().isAccepted()){
+            if(mc.interactionManager.interactItem(mc.player,Hand.MAIN_HAND).isAccepted()){
                 mc.player.swingHand(Hand.MAIN_HAND);performedRight++;return true;
             }
         }
