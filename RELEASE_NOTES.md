@@ -1,9 +1,22 @@
-# LexyClient 2.5.0
-- AutoTotem guarded by input idle and direct emergency fallback; inventory mode uses atomic SWAP and cursor-safe close.
-- TriggerBot ignores manual clicks and line-of-sight obstructions, and supports a dedicated hold key.
-- Custom keybind editor; per-module toggles, hold trigger, Zoom and 4 chat command macros.
-- Dynamic Zoom with FOV restoration and configurable percentage/mode.
-- Pojav graphics preset, simulation distance setting, opt-in adaptive FPS governor.
-- In-game playback of locally stored MP3 with mp3spi/jlayer, in addition to WAV and AIFF.
-- More coherent blue/grey GUI with dedicated Keybinds navigation and zoom controls.
-- Spotify Free still cannot stream full Spotify audio inside the mod without permitted access. No bypass or DRM extraction.
+# LexyClient 2.6 — Slate Blue Combat Update
+
+### New: Aim Assist (OFF by default)
+- Smooth yaw/pitch aiming at visible living entities, with a configurable cone and aim range.
+- Filters for players/mobs, teams, invisibility, held weapon, and hold-key requirement.
+- Adjustable smoothness, rotation cap per tick, target height, prediction and target lock.
+- Does not modify attack reach or fabricate packets. Disable where prohibited by server rules.
+
+### Combat stability
+- AutoTotem: new emergency direct-swap and fast empty-offhand options; keeps mouse control during attacks.
+- TriggerBot: target stability requirement, timing variation, invisibility and critical-only filters.
+- Panic key to disable all combat modules immediately. Dedicated Aim Assist toggle and hold keys.
+- All configuration persists across sessions and is accessible in Cheats and Controls.
+
+### Interface and performance
+- Three Cheats tabs: AutoTotem, TriggerBot and Aim Assist.
+- Slate blue / graphite theme refresh with six selectable accent tones.
+- Performance: adjustable adaptive FPS target, minimum and maximum render distance.
+- Existing Spotify, local audio, MP3 playback, 11 UI sounds, key macros, zoom and Pojav touch navigation retained.
+
+### Verification status
+- GitHub Actions compiles a real Fabric 1.20.1 remapped JAR; manual in-game/Android testing still recommended.

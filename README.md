@@ -1,13 +1,17 @@
-# LexyClient 2.5 — Blue Slate Edition
+# LexyClient 2.6 — Slate Blue Combat Update
 
-Fabric 1.20.1 client mod for Java 17, PC and PojavLauncher.
+Fabric 1.20.1 client mod for PC and PojavLauncher, built against Java 17.
 
-## Changes
-- AutoTotem inventory is a single atomic vanilla offhand SWAP and opens only when the player is idle; combat fallback uses DIRECT without opening menus. Configurable safe idle and fallback.
-- TriggerBot guards manual mouse clicks, checks crosshair line of sight, distance, cooldown and optional hold-key.
-- Real rebindable key controls (Minecraft Settings > Controls) for AutoTotem, TriggerBot, hold-to-trigger, and Zoom, plus four single-press chat/command macros configured through LexyClient > Keybinds.
-- Hold or toggle Zoom with safe FOV restoration.
-- Pojav low-graphics preset and an optional conservative adaptive-FPS governor. No false FPS boost claims.
-- In-game Local Music now accepts standard MP3 files using bundled Java Sound decoder, plus WAV/AIFF; Spotify's own licensed music streaming still requires official Spotify clients or Premium-capable APIs.
+## What's new
+- **Aim Assist:** configurable smooth rotation and target acquisition with distance/FOV/visibility/weapon/team filters. Disabled by default.
+- **AutoTotem:** emergency direct swap, quick offhand refill; mouse-safe inventory swap.
+- **TriggerBot:** stable targets, configurable timing variation, invisibility and critical-hit filters.
+- **Control keys:** Aim Assist toggle/hold; emergency disable all combat modules; previous Zoom and four macros.
+- **Adaptive optimization:** tune FPS target and min/max render chunks in the Performance menu.
+- Slate and blue interface with three real combat panels and six accent swatches.
+- Existing Spotify Free (open official player), Spotify API Connect and local MP3/WAV/AIFF player remain. Spotify content is not streamed from Spotify into Minecraft.
 
-Compiled using Gradle 8.11.1 via GitHub Actions. Full Minecraft/Pojav gameplay tests are needed separately.
+## Build and install
+JDK 17, Fabric Loader + Fabric API for 1.20.1, Gradle 8.11.1. Run `gradle build` and install the remapped `build/libs/lexy-client-2.6.0.jar` in `mods`. Remove prior versions.
+
+Auto combat modules may violate multiplayer server rules; they default to OFF. A successful compilation does not replace real device/server testing.

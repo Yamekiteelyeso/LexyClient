@@ -41,7 +41,7 @@ public final class LexyClient implements ClientModInitializer {
  public static int uiSoundVolume=35;
  public static int maxHudWidgets=7;
  public static int localMusicVolume=65; public static boolean localMusicLoop=false;
- public static final int[] ACCENTS = {0xFF3B82F6,0xFF60A5FA,0xFF2563EB,0xFF22D3EE};
+ public static final int[] ACCENTS = {0xFF3B82F6,0xFF60A5FA,0xFF2563EB,0xFF22D3EE,0xFF7489B8,0xFF467FB9};
  public static int accent(){return ACCENTS[Math.floorMod(accentChoice,ACCENTS.length)];}
  public static int moduleCount(){return MODULES.size();}
  public static boolean hudMinimal = false;
@@ -58,7 +58,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();HudRenderer.invalidate();save();
  }
 
- private static final int CONFIG_VERSION = 250;
+ private static final int CONFIG_VERSION = 260;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -97,6 +97,7 @@ public final class LexyClient implements ClientModInitializer {
  private static void register(){
   addAction("AutoTotem", "AutoTotem", AutoTotem::status, false);
   addAction("TriggerBot", "TriggerBot", TriggerBot::status, false);
+  addAction("AimAssist", "AimAssist", AimAssist::status, false);
   add("AutoTotem", "AutoTotem Swaps", () -> String.valueOf(AutoTotem.swaps()), false);
   add("Utilities", "Totem Stock Warning", () -> Integer.parseInt(inventory(Items.TOTEM_OF_UNDYING)) <= 2 ? "LOW TOTEMS" : "OK", false);
   add("Combat","Target Name",LexyClient::target,false);
@@ -187,7 +188,7 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
- ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);AutoTotem.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+ ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);AutoTotem.tick(client);AimAssist.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
@@ -209,7 +210,9 @@ public final class LexyClient implements ClientModInitializer {
  totem.addProperty("mode",AutoTotem.mode.name());totem.addProperty("randomSource",AutoTotem.randomSource);totem.addProperty("combatFallbackDirect",AutoTotem.combatFallbackDirect);totem.addProperty("safeIdleMs",AutoTotem.safeIdleMs);
  totem.addProperty("minDelayMs",AutoTotem.minDelayMs);totem.addProperty("maxDelayMs",AutoTotem.maxDelayMs);
  totem.addProperty("inventoryStepMs",AutoTotem.inventoryStepMs);totem.addProperty("cooldownMs",AutoTotem.cooldownMs);
- totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
+ totem.addProperty("notify",AutoTotem.notify);
+ totem.addProperty("emergencyDirect",AutoTotem.emergencyDirect);totem.addProperty("emergencyHealth",AutoTotem.emergencyHealth);
+ totem.addProperty("priorityOnEmpty",AutoTotem.priorityOnEmpty);root.add("autoTotem",totem);
  JsonObject trigger=new JsonObject();trigger.addProperty("targets",TriggerBot.targets.name());
  trigger.addProperty("clicksPerSecond",TriggerBot.clicksPerSecond);
  trigger.addProperty("cooldownPercent",TriggerBot.cooldownPercent);
@@ -217,8 +220,21 @@ public final class LexyClient implements ClientModInitializer {
  trigger.addProperty("requireWeapon",TriggerBot.requireWeapon);
  trigger.addProperty("requireSneak",TriggerBot.requireSneak);
  trigger.addProperty("ignoreTeam",TriggerBot.ignoreTeam);
+ trigger.addProperty("ignoreInvisible",TriggerBot.ignoreInvisible);trigger.addProperty("onlyCriticalHits",TriggerBot.onlyCriticalHits);
+ trigger.addProperty("targetStableTicks",TriggerBot.targetStableTicks);trigger.addProperty("jitterMs",TriggerBot.jitterMs);
  trigger.addProperty("requireChargedHit",TriggerBot.requireChargedHit);trigger.addProperty("requireHold",TriggerBot.requireHold);trigger.addProperty("avoidManualClicks",TriggerBot.avoidManualClicks);
- root.add("triggerBot",trigger);JsonObject zoom=new JsonObject();zoom.addProperty("percent",ZoomController.zoomPercent);zoom.addProperty("toggleMode",ZoomController.toggleMode);root.add("zoom",zoom);root.addProperty("adaptiveFps",OptimizationManager.adaptiveEnabled);
+ root.add("triggerBot",trigger);
+ JsonObject aim=new JsonObject();aim.addProperty("targets",AimAssist.targets.name());aim.addProperty("rangeTenths",AimAssist.rangeTenths);
+ aim.addProperty("fovDegrees",AimAssist.fovDegrees);aim.addProperty("smoothness",AimAssist.smoothness);
+ aim.addProperty("maxTurnTenths",AimAssist.maxTurnTenths);aim.addProperty("aimHeight",AimAssist.aimHeight);
+ aim.addProperty("leadPercent",AimAssist.leadPercent);aim.addProperty("lockMs",AimAssist.lockMs);
+ aim.addProperty("requireHold",AimAssist.requireHold);aim.addProperty("requireWeapon",AimAssist.requireWeapon);
+ aim.addProperty("ignoreTeammates",AimAssist.ignoreTeammates);aim.addProperty("ignoreInvisible",AimAssist.ignoreInvisible);
+ root.add("aimAssist",aim);
+ JsonObject zoom=new JsonObject();zoom.addProperty("percent",ZoomController.zoomPercent);zoom.addProperty("toggleMode",ZoomController.toggleMode);root.add("zoom",zoom);root.addProperty("adaptiveFps",OptimizationManager.adaptiveEnabled);
+ root.addProperty("adaptiveFpsTarget",OptimizationManager.targetFps);
+ root.addProperty("adaptiveMinDistance",OptimizationManager.minimumDistance);
+ root.addProperty("adaptiveMaxDistance",OptimizationManager.maximumDistance);
  root.add("style",style);root.addProperty("spotifyClientId",spotifyClientId);
  root.addProperty("localMusicVolume",LocalMusicPlayer.INSTANCE.volume());root.addProperty("localMusicLoop",LocalMusicPlayer.INSTANCE.looping());
  Files.writeString(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
@@ -259,7 +275,10 @@ public final class LexyClient implements ClientModInitializer {
  if(t.has("maxDelayMs"))AutoTotem.maxDelayMs=Math.max(AutoTotem.minDelayMs,Math.min(2500,t.get("maxDelayMs").getAsInt()));
  if(t.has("inventoryStepMs"))AutoTotem.inventoryStepMs=Math.max(100,Math.min(1100,t.get("inventoryStepMs").getAsInt()));
  if(t.has("cooldownMs"))AutoTotem.cooldownMs=Math.max(200,Math.min(3000,t.get("cooldownMs").getAsInt()));
- if(t.has("notify"))AutoTotem.notify=t.get("notify").getAsBoolean();}
+ if(t.has("notify"))AutoTotem.notify=t.get("notify").getAsBoolean();
+ if(t.has("emergencyDirect"))AutoTotem.emergencyDirect=t.get("emergencyDirect").getAsBoolean();
+ if(t.has("emergencyHealth"))AutoTotem.emergencyHealth=Math.max(2,Math.min(20,t.get("emergencyHealth").getAsInt()));
+ if(t.has("priorityOnEmpty"))AutoTotem.priorityOnEmpty=t.get("priorityOnEmpty").getAsBoolean();}
  if(root.has("triggerBot")){JsonObject t=root.getAsJsonObject("triggerBot");
  if(t.has("targets"))try{TriggerBot.targets=TriggerBot.Targets.valueOf(t.get("targets").getAsString());}catch(IllegalArgumentException ignored){}
  if(t.has("clicksPerSecond"))TriggerBot.clicksPerSecond=Math.max(1,Math.min(12,t.get("clicksPerSecond").getAsInt()));
@@ -270,9 +289,29 @@ public final class LexyClient implements ClientModInitializer {
  if(t.has("ignoreTeam"))TriggerBot.ignoreTeam=t.get("ignoreTeam").getAsBoolean();
  if(t.has("requireChargedHit"))TriggerBot.requireChargedHit=t.get("requireChargedHit").getAsBoolean();
  if(t.has("requireHold"))TriggerBot.requireHold=t.get("requireHold").getAsBoolean();
- if(t.has("avoidManualClicks"))TriggerBot.avoidManualClicks=t.get("avoidManualClicks").getAsBoolean();}
+ if(t.has("avoidManualClicks"))TriggerBot.avoidManualClicks=t.get("avoidManualClicks").getAsBoolean();
+ if(t.has("ignoreInvisible"))TriggerBot.ignoreInvisible=t.get("ignoreInvisible").getAsBoolean();
+ if(t.has("onlyCriticalHits"))TriggerBot.onlyCriticalHits=t.get("onlyCriticalHits").getAsBoolean();
+ if(t.has("targetStableTicks"))TriggerBot.targetStableTicks=Math.max(1,Math.min(10,t.get("targetStableTicks").getAsInt()));
+ if(t.has("jitterMs"))TriggerBot.jitterMs=Math.max(0,Math.min(180,t.get("jitterMs").getAsInt()));}
+ if(root.has("aimAssist")){JsonObject a=root.getAsJsonObject("aimAssist");
+ if(a.has("targets"))try{AimAssist.targets=AimAssist.Targets.valueOf(a.get("targets").getAsString());}catch(IllegalArgumentException ignored){}
+ if(a.has("rangeTenths"))AimAssist.rangeTenths=Math.max(25,Math.min(60,a.get("rangeTenths").getAsInt()));
+ if(a.has("fovDegrees"))AimAssist.fovDegrees=Math.max(10,Math.min(150,a.get("fovDegrees").getAsInt()));
+ if(a.has("smoothness"))AimAssist.smoothness=Math.max(10,Math.min(95,a.get("smoothness").getAsInt()));
+ if(a.has("maxTurnTenths"))AimAssist.maxTurnTenths=Math.max(5,Math.min(240,a.get("maxTurnTenths").getAsInt()));
+ if(a.has("aimHeight"))AimAssist.aimHeight=Math.max(20,Math.min(95,a.get("aimHeight").getAsInt()));
+ if(a.has("leadPercent"))AimAssist.leadPercent=Math.max(0,Math.min(100,a.get("leadPercent").getAsInt()));
+ if(a.has("lockMs"))AimAssist.lockMs=Math.max(200,Math.min(2000,a.get("lockMs").getAsInt()));
+ if(a.has("requireHold"))AimAssist.requireHold=a.get("requireHold").getAsBoolean();
+ if(a.has("requireWeapon"))AimAssist.requireWeapon=a.get("requireWeapon").getAsBoolean();
+ if(a.has("ignoreTeammates"))AimAssist.ignoreTeammates=a.get("ignoreTeammates").getAsBoolean();
+ if(a.has("ignoreInvisible"))AimAssist.ignoreInvisible=a.get("ignoreInvisible").getAsBoolean();}
  if(root.has("zoom")){JsonObject z=root.getAsJsonObject("zoom");if(z.has("percent"))ZoomController.zoomPercent=Math.max(15,Math.min(70,z.get("percent").getAsInt()));if(z.has("toggleMode"))ZoomController.toggleMode=z.get("toggleMode").getAsBoolean();}
  if(root.has("adaptiveFps"))OptimizationManager.adaptiveEnabled=root.get("adaptiveFps").getAsBoolean();
+ if(root.has("adaptiveFpsTarget"))OptimizationManager.targetFps=Math.max(30,Math.min(144,root.get("adaptiveFpsTarget").getAsInt()));
+ if(root.has("adaptiveMinDistance"))OptimizationManager.minimumDistance=Math.max(2,Math.min(12,root.get("adaptiveMinDistance").getAsInt()));
+ if(root.has("adaptiveMaxDistance"))OptimizationManager.maximumDistance=Math.max(OptimizationManager.minimumDistance,Math.min(20,root.get("adaptiveMaxDistance").getAsInt()));
  if(root.has("spotifyClientId"))spotifyClientId=root.get("spotifyClientId").getAsString();
  if(root.has("localMusicVolume"))localMusicVolume=Math.max(0,Math.min(100,root.get("localMusicVolume").getAsInt()));
  if(root.has("localMusicLoop"))localMusicLoop=root.get("localMusicLoop").getAsBoolean();

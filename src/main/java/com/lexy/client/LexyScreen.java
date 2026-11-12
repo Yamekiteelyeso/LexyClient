@@ -8,15 +8,15 @@ import java.util.*;
 
 /** Handmade graphite/blue dashboard. Each visible control invokes a real setting or API call. */
 public final class LexyScreen extends Screen {
-    private static final int BG=0xFF101722, PANEL=0xFF172333, SURFACE=0xFF26374B;
-    private static final int OUTLINE=0xFF33475D, WHITE=0xFFF3F8FF, MUTED=0xFFA7BAD1;
+    private static final int BG=0xFF0C1423, PANEL=0xFF152337, SURFACE=0xFF223650;
+    private static final int OUTLINE=0xFF2D4766, WHITE=0xFFF2F7FF, MUTED=0xFF9AB3CB;
     private static final String[] TABS={"All Modules","Combat","HUD","Statistics","Utilities","Performance","Optimization","Spotify","Local Music","Appearance","Cheats","Keybinds"};
     private static final int ROW_H=54, NAV_ROW=34;
     private final boolean editor;
     private int tab, scroll=0, navScroll=0, selected=-1, dragDX=0, dragDY=0;
     private final Screen parent;
-    private boolean dragging=false, totemSettingsOpen=false, triggerSettingsOpen=false, spotifyFreeView=true;
-    private int cheatSection=0; // 0 AutoTotem, 1 TriggerBot
+    private boolean dragging=false, totemSettingsOpen=false, triggerSettingsOpen=false, aimSettingsOpen=false, spotifyFreeView=true;
+    private int cheatSection=0; // 0 AutoTotem, 1 TriggerBot, 2 Aim Assist
     private int spotifyView=0; // 0=tracks, 1=devices, 2=playlists
     private String query="";
     private TextFieldWidget search,spotifyClientId,spotifySearch,spotifyRedirect,spotifyFreeSearch;
@@ -106,7 +106,7 @@ public final class LexyScreen extends Screen {
         String needle=query.trim().toLowerCase(Locale.ROOT);
         ArrayList<LexyClient.Module> list=new ArrayList<>();
         for(LexyClient.Module m:LexyClient.MODULES){
-            if ("AutoTotem".equals(m.category()) || "TriggerBot".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
+            if ("AutoTotem".equals(m.category()) || "TriggerBot".equals(m.category()) || "AimAssist".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
             // All Modules is a compact list of actual toggleable HUD indicators, not 80 fake switches.
             if(tab==0 && !HudRenderer.isRelevant(m))continue;
             if(tab>0&&tab<=4&&!m.category().equals(TABS[tab]))continue;
@@ -117,19 +117,19 @@ public final class LexyScreen extends Screen {
     }
     private boolean modular(){return tab<=4;}
     @Override public void render(DrawContext c,int mx,int my,float dt){
-        renderBackground(c);c.fillGradient(0,0,width,height,0xF0081220,0xE9080C14);
+        renderBackground(c);c.fillGradient(0,0,width,height,0xF0040B17,0xEA101B30);
         int logicalMX=(int)logical(mx),logicalMY=(int)logical(my);
         c.getMatrices().push();c.getMatrices().scale(menuScale,menuScale,1);
         rounded(c,panelX-7,panelY-6,panelW+14,panelH+13,0x69000000);
         rounded(c,panelX-2,panelY-2,panelW+4,panelH+4,OUTLINE);
         rounded(c,panelX,panelY,panelW,panelH,BG);
-        c.fillGradient(panelX+4,panelY+3,panelX+panelW-4,panelY+7,0xFF2A87F3,0xFF1D506F);
+        c.fillGradient(panelX+4,panelY+3,panelX+panelW-4,panelY+7,accent(),0xFF183656);
         rect(c,panelX+4,panelY+4,sidebarW,panelH-8,PANEL);
         rect(c,panelX+sidebarW+4,panelY+12,1,panelH-24,OUTLINE);
         rounded(c,panelX+16,panelY+13,39,39,0xFF0D1926);
         c.drawTexture(LexyClient.LOGO,panelX+17,panelY+14,37,37,0,0,256,256,256,256);
         label(c,"LexyClient",panelX+62,panelY+19,Math.max(35,sidebarW-66),WHITE);
-        label(c,"2.5  /  FABRIC",panelX+62,panelY+35,Math.max(36,sidebarW-68),MUTED);
+        label(c,"2.6  /  FABRIC",panelX+62,panelY+35,Math.max(36,sidebarW-68),MUTED);
         rect(c,panelX+16,panelY+62,sidebarW-27,1,OUTLINE);
         int count=navCapacity(); navScroll=Math.max(0,Math.min(navScroll,navLimit()));
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+count);i++){
@@ -394,15 +394,61 @@ public final class LexyScreen extends Screen {
         }
         c.disableScissor();
     }
-    private static final int TRIGGER_ROWS=10;
+    private static final int TRIGGER_ROWS=14;
+    private static final int AIM_ROWS=13;
+    private static final int TOTEM_ROWS=15;
+    private int cheatTabX(int section){return rightX()+7+section*((rightW()-14)/3);}
+    private int cheatTabW(int section){return section==2 ? rightX()+rightW()-7-cheatTabX(section) : (rightW()-14)/3-4;}
     private void renderCheats(DrawContext c,int mx,int my){
-        int x=rightX(),w=rightW(),top=panelY+66,bw=(w-22)/2;
-        rounded(c,x+7,top,bw-4,27,cheatSection==0?0xFF2E516E:SURFACE);
-        label(c,"AUTOTOTEM",x+17,top+9,bw-24,WHITE);
-        rounded(c,x+7+bw,top,w-bw-15,27,cheatSection==1?0xFF2E516E:SURFACE);
-        label(c,"TRIGGERBOT",x+18+bw,top+9,w-bw-31,WHITE);
+        int x=rightX(),w=rightW(),top=panelY+66;
+        String[] items={"AUTOTOTEM","TRIGGERBOT","AIM ASSIST"};
+        for(int i=0;i<3;i++){
+            int xx=cheatTabX(i),ww=cheatTabW(i);
+            rounded(c,xx,top,ww,27,i==cheatSection?0xFF264F80:SURFACE);
+            if(i==cheatSection)rect(c,xx+5,top+24,ww-10,2,accent());
+            label(c,items[i],xx+10,top+9,ww-16,i==cheatSection?WHITE:MUTED);
+        }
         if(cheatSection==0)renderAutoTotem(c,mx,my);
-        else renderTriggerBot(c,mx,my);
+        else if(cheatSection==1)renderTriggerBot(c,mx,my);
+        else renderAimAssist(c,mx,my);
+    }
+    private void renderAimAssist(DrawContext c,int mx,int my){
+        int x=rightX(),w=rightW(),top=panelY+102;
+        rounded(c,x,top,w,71,0xFF172A43);rect(c,x,top,4,71,accent());
+        label(c,"Aim Assist | "+AimAssist.status(),x+13,top+10,w-25,WHITE);
+        label(c,"Smooth aim · visible targets · no packet/reach changes",x+13,top+26,w-24,MUTED);
+        int buttonY=top+42,bw=Math.max(60,(w-26)/2);
+        rounded(c,x+9,buttonY,bw,24,LexyClient.enabled.getOrDefault("AimAssist",false)?0xFF245A86:SURFACE);
+        label(c,LexyClient.enabled.getOrDefault("AimAssist",false)?"ENABLED · TAP TO OFF":"DISABLED · TAP TO ON",x+17,buttonY+8,bw-15,WHITE);
+        rounded(c,x+16+bw,buttonY,w-bw-25,24,aimSettingsOpen?0xFF2D638A:SURFACE);
+        label(c,aimSettingsOpen?"HIDE SETTINGS":"CONFIGURE",x+24+bw,buttonY+8,w-bw-40,WHITE);
+        if(!aimSettingsOpen){
+            label(c,"Set the FOV, smoothing, rotation speed and tracking.",x+9,top+95,w-18,MUTED);
+            label(c,"Add a toggle / hold key in Keybinds. Disabled by default.",x+9,top+114,w-18,MUTED);
+            return;
+        }
+        String[] names={"TARGETS","AIM DISTANCE","AIM FOV","SMOOTHNESS","MAX TURN / TICK","AIM HEIGHT","MOVEMENT LEAD","TARGET LOCK","REQUIRE HOLD KEY","WEAPON ONLY","IGNORE TEAMMATES","IGNORE INVISIBLE","RESET TRACKING"};
+        String[] values={AimAssist.targets.name(),String.format(Locale.ROOT,"%.1f",AimAssist.rangeTenths/10f)+" m",
+                AimAssist.fovDegrees+"°",AimAssist.smoothness+"%",String.format(Locale.ROOT,"%.1f",AimAssist.maxTurnTenths/10f)+"°",
+                AimAssist.aimHeight+"%",AimAssist.leadPercent+"%",AimAssist.lockMs+" ms",
+                AimAssist.requireHold?"ON":"OFF",AimAssist.requireWeapon?"YES":"NO",
+                AimAssist.ignoreTeammates?"YES":"NO",AimAssist.ignoreInvisible?"YES":"NO","RESET"};
+        int start=top+81,end=panelY+panelH-65;
+        int visible=Math.min(AIM_ROWS,Math.max(1,(end-start)/48));
+        scroll=Math.max(0,Math.min(scroll,Math.max(0,AIM_ROWS-visible)));
+        clip(c,x,start,x+w,end);
+        for(int i=scroll;i<Math.min(AIM_ROWS,scroll+visible);i++){
+            int y=start+(i-scroll)*48;
+            rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            label(c,names[i],x+19,y+16,w-145,WHITE);
+            rounded(c,x+w-113,y+8,98,25,SURFACE);label(c,values[i],x+w-104,y+16,86,WHITE);
+        }
+        c.disableScissor();
+        int navY=panelY+panelH-60;
+        rounded(c,x+7,navY,65,25,scroll>0?SURFACE:OUTLINE);label(c,"< UP",x+18,navY+9,50,WHITE);
+        rounded(c,x+w-74,navY,67,25,scroll<Math.max(0,AIM_ROWS-visible)?SURFACE:OUTLINE);
+        label(c,"DOWN >",x+w-67,navY+9,57,WHITE);
+        label(c,"Settings "+(scroll+1)+"-"+Math.min(AIM_ROWS,scroll+visible)+" / "+AIM_ROWS,x+80,navY+9,w-164,MUTED);
     }
     private void renderTriggerBot(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
@@ -419,8 +465,8 @@ public final class LexyScreen extends Screen {
             label(c,"OFF by default; enable only where permitted.",x+8,top+114,w-16,MUTED);
             return;
         }
-        String[] names={"TARGETS", "CLICKS PER SECOND", "CHARGED HITS", "MIN CHARGE", "SWORD/AXE ONLY", "REQUIRE SNEAK", "IGNORE TEAMMATES", "MAX DISTANCE", "HOLD KEY REQUIRED", "IGNORE MANUAL CLICKS"};
-        String[] values={TriggerBot.targets.name(),TriggerBot.clicksPerSecond+" CPS",TriggerBot.requireChargedHit?"YES":"NO",TriggerBot.cooldownPercent+"%",TriggerBot.requireWeapon?"YES":"NO",TriggerBot.requireSneak?"YES":"NO",TriggerBot.ignoreTeam?"YES":"NO",String.format(Locale.ROOT,"%.1f",TriggerBot.reachTenths/10f)+" m",TriggerBot.requireHold?"YES":"NO",TriggerBot.avoidManualClicks?"YES":"NO"};
+        String[] names={"TARGETS", "CLICKS PER SECOND", "CHARGED HITS", "MIN CHARGE", "SWORD/AXE ONLY", "REQUIRE SNEAK", "IGNORE TEAMMATES", "MAX DISTANCE", "HOLD KEY REQUIRED", "IGNORE MANUAL CLICKS", "IGNORE INVISIBLE", "ONLY CRITICALS", "STABLE TARGET TICKS", "TIMING VARIATION"};
+        String[] values={TriggerBot.targets.name(),TriggerBot.clicksPerSecond+" CPS",TriggerBot.requireChargedHit?"YES":"NO",TriggerBot.cooldownPercent+"%",TriggerBot.requireWeapon?"YES":"NO",TriggerBot.requireSneak?"YES":"NO",TriggerBot.ignoreTeam?"YES":"NO",String.format(Locale.ROOT,"%.1f",TriggerBot.reachTenths/10f)+" m",TriggerBot.requireHold?"YES":"NO",TriggerBot.avoidManualClicks?"YES":"NO",TriggerBot.ignoreInvisible?"YES":"NO",TriggerBot.onlyCriticalHits?"YES":"NO",TriggerBot.targetStableTicks+" ticks",TriggerBot.jitterMs+" ms"};
         int start=top+81,end=panelY+panelH-65;
         int visible=Math.min(TRIGGER_ROWS,Math.max(1,(end-start)/48));
         scroll=Math.max(0,Math.min(scroll,Math.max(0,TRIGGER_ROWS-visible)));
@@ -439,7 +485,6 @@ public final class LexyScreen extends Screen {
         label(c,"DOWN >",x+w-67,navY+9,57,WHITE);
         label(c,"Settings "+(scroll+1)+"-"+Math.min(TRIGGER_ROWS,scroll+visible)+" / "+TRIGGER_ROWS,x+80,navY+9,w-164,MUTED);
     }
-    private static final int TOTEM_ROWS=12;
     private void renderAutoTotem(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
         rounded(c,x,top,w,71,0xFF112F52);rect(c,x,top,4,71,accent());
@@ -455,8 +500,8 @@ public final class LexyScreen extends Screen {
             label(c,"Inventory opens only while idle; combat remains uninterrupted.",x+8,top+116,w-16,MUTED);
             return;
         }
-        String[] labels={"MODE", "RANDOM TOTEM SLOT", "MIN DELAY", "MAX DELAY", "INVENTORY STEP", "AFTER-SWAP COOLDOWN", "ONLY WHEN OFFHAND EMPTY", "LOW HEALTH ONLY", "HEALTH THRESHOLD", "SHOW NOTIFICATIONS", "COMBAT DIRECT FALLBACK", "SAFE IDLE WAIT"};
-        String[] values={AutoTotem.mode==AutoTotem.Mode.DIRECT?"DIRECT":"INVENTORY", AutoTotem.randomSource?"ON":"OFF",AutoTotem.minDelayMs+" ms",AutoTotem.maxDelayMs+" ms",AutoTotem.inventoryStepMs+" ms",AutoTotem.cooldownMs+" ms",AutoTotem.onlyWhenEmpty?"YES":"NO",AutoTotem.lowHealthOnly?"YES":"NO",AutoTotem.healthThreshold+" HP",AutoTotem.notify?"ON":"OFF",AutoTotem.combatFallbackDirect?"ON":"OFF",AutoTotem.safeIdleMs+" ms"};
+        String[] labels={"MODE", "RANDOM TOTEM SLOT", "MIN DELAY", "MAX DELAY", "INVENTORY STEP", "AFTER-SWAP COOLDOWN", "ONLY WHEN OFFHAND EMPTY", "LOW HEALTH ONLY", "HEALTH THRESHOLD", "SHOW NOTIFICATIONS", "COMBAT DIRECT FALLBACK", "SAFE IDLE WAIT", "EMERGENCY DIRECT", "EMERGENCY HEALTH", "QUICK EMPTY OFFHAND"};
+        String[] values={AutoTotem.mode==AutoTotem.Mode.DIRECT?"DIRECT":"INVENTORY", AutoTotem.randomSource?"ON":"OFF",AutoTotem.minDelayMs+" ms",AutoTotem.maxDelayMs+" ms",AutoTotem.inventoryStepMs+" ms",AutoTotem.cooldownMs+" ms",AutoTotem.onlyWhenEmpty?"YES":"NO",AutoTotem.lowHealthOnly?"YES":"NO",AutoTotem.healthThreshold+" HP",AutoTotem.notify?"ON":"OFF",AutoTotem.combatFallbackDirect?"ON":"OFF",AutoTotem.safeIdleMs+" ms",AutoTotem.emergencyDirect?"YES":"NO",AutoTotem.emergencyHealth+" HP",AutoTotem.priorityOnEmpty?"YES":"NO"};
         int start=top+81,bodyEnd=panelY+panelH-65;
         int visible=Math.min(TOTEM_ROWS,Math.max(1,(bodyEnd-start)/48));
         scroll=Math.max(0,Math.min(scroll,Math.max(0,TOTEM_ROWS-visible)));
@@ -485,8 +530,9 @@ public final class LexyScreen extends Screen {
         int rx=rightX(),rw=rightW(),yy=panelY+66;
         text(c,"ACCENT COLOR",rx+8,yy,WHITE);yy+=20;
         for(int i=0;i<LexyClient.ACCENTS.length;i++){
-            int xx=rx+8+i*55;rect(c,xx,yy,45,28,LexyClient.ACCENTS[i]);
-            if(i==Math.floorMod(LexyClient.accentChoice,LexyClient.ACCENTS.length))frame(c,xx-2,yy-2,49,32,WHITE);
+            int step=Math.min(55,Math.max(33,(rw-16)/LexyClient.ACCENTS.length));
+            int ww=step-8,xx=rx+8+i*step;rounded(c,xx,yy,ww,28,LexyClient.ACCENTS[i]);
+            if(i==Math.floorMod(LexyClient.accentChoice,LexyClient.ACCENTS.length))frame(c,xx-2,yy-2,ww+4,32,WHITE);
         }
         yy+=45;
         String[] names={"MENU SIZE", "HUD SIZE", "HUD SNAP TO GRID", "HUD GRID VISIBLE", "HUD GRID SPACING", "HUD Background","Text Shadow","Compact Readouts","Hover Sounds","Background Opacity","Widget Spacing","Low HP Warning","Armor Warning %","HUD Text Color","UI Sounds","UI Sound Volume","Max HUD Widgets","Zoom Power","Zoom Toggle Mode"};
@@ -684,12 +730,48 @@ public final class LexyScreen extends Screen {
                 if(idx<player.tracks().size()){player.play(idx);return true;}
             }
         }else if(tab==10){
-            int switchY=panelY+66,switchWidth=(rw-22)/2;
-            if(inside(mx,my,rx+7,switchY,switchWidth-4,27)){
-                cheatSection=0;scroll=0;LexySounds.navigate();return true;
+            int switchY=panelY+66;
+            for(int tabIndex=0;tabIndex<3;tabIndex++){
+                if(inside(mx,my,cheatTabX(tabIndex),switchY,cheatTabW(tabIndex),27)){
+                    cheatSection=tabIndex;scroll=0;LexySounds.navigate();return true;
+                }
             }
-            if(inside(mx,my,rx+7+switchWidth,switchY,rw-switchWidth-15,27)){
-                cheatSection=1;scroll=0;LexySounds.navigate();return true;
+            if(cheatSection==2){
+                int top=panelY+102,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
+                if(inside(mx,my,rx+9,buttonY,bw,24)){
+                    boolean next=!LexyClient.enabled.getOrDefault("AimAssist",false);
+                    LexyClient.enabled.put("AimAssist",next);
+                    AimAssist.reset();LexyClient.save();LexySounds.toggle();return true;
+                }
+                if(inside(mx,my,rx+9+bw+7,buttonY,rw-bw-25,24)){
+                    aimSettingsOpen=!aimSettingsOpen;scroll=0;return true;
+                }
+                if(aimSettingsOpen){
+                    int yy=top+81,row=48,end=panelY+panelH-65;
+                    int visible=Math.min(AIM_ROWS,Math.max(1,(end-yy)/row));
+                    int max=Math.max(0,AIM_ROWS-visible),navY=panelY+panelH-60;
+                    if(inside(mx,my,rx+7,navY,65,25)){scroll=Math.max(0,scroll-1);return true;}
+                    if(inside(mx,my,rx+rw-74,navY,67,25)){scroll=Math.min(max,scroll+1);return true;}
+                    for(int i=scroll;i<Math.min(AIM_ROWS,scroll+visible);i++)if(inside(mx,my,rx+7,yy+(i-scroll)*row,rw-16,41)){
+                        switch(i){
+                            case 0->AimAssist.targets=AimAssist.Targets.values()[(AimAssist.targets.ordinal()+1)%AimAssist.Targets.values().length];
+                            case 1->AimAssist.rangeTenths=AimAssist.rangeTenths>=60?25:AimAssist.rangeTenths+5;
+                            case 2->AimAssist.fovDegrees=AimAssist.fovDegrees>=150?10:AimAssist.fovDegrees+10;
+                            case 3->AimAssist.smoothness=AimAssist.smoothness>=95?10:AimAssist.smoothness+5;
+                            case 4->AimAssist.maxTurnTenths=AimAssist.maxTurnTenths>=240?5:AimAssist.maxTurnTenths+10;
+                            case 5->AimAssist.aimHeight=AimAssist.aimHeight>=95?20:AimAssist.aimHeight+5;
+                            case 6->AimAssist.leadPercent=AimAssist.leadPercent>=100?0:AimAssist.leadPercent+10;
+                            case 7->AimAssist.lockMs=AimAssist.lockMs>=2000?200:AimAssist.lockMs+150;
+                            case 8->AimAssist.requireHold=!AimAssist.requireHold;
+                            case 9->AimAssist.requireWeapon=!AimAssist.requireWeapon;
+                            case 10->AimAssist.ignoreTeammates=!AimAssist.ignoreTeammates;
+                            case 11->AimAssist.ignoreInvisible=!AimAssist.ignoreInvisible;
+                            case 12->AimAssist.reset();
+                        }
+                        AimAssist.reset();LexyClient.save();LexySounds.save();return true;
+                    }
+                }
+                return true;
             }
             if(cheatSection==1){
                 int top=panelY+102,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
@@ -719,6 +801,10 @@ public final class LexyScreen extends Screen {
                             case 7->TriggerBot.reachTenths=TriggerBot.reachTenths>=30?20:TriggerBot.reachTenths+1;
                             case 8->TriggerBot.requireHold=!TriggerBot.requireHold;
                             case 9->TriggerBot.avoidManualClicks=!TriggerBot.avoidManualClicks;
+                            case 10->TriggerBot.ignoreInvisible=!TriggerBot.ignoreInvisible;
+                            case 11->TriggerBot.onlyCriticalHits=!TriggerBot.onlyCriticalHits;
+                            case 12->TriggerBot.targetStableTicks=TriggerBot.targetStableTicks>=8?1:TriggerBot.targetStableTicks+1;
+                            case 13->TriggerBot.jitterMs=TriggerBot.jitterMs>=150?0:TriggerBot.jitterMs+15;
                         }
                         TriggerBot.reset();LexyClient.save();LexySounds.save();return true;
                     }
@@ -756,13 +842,18 @@ public final class LexyScreen extends Screen {
                         case 9->AutoTotem.notify=!AutoTotem.notify;
                         case 10->AutoTotem.combatFallbackDirect=!AutoTotem.combatFallbackDirect;
                         case 11->AutoTotem.safeIdleMs=AutoTotem.safeIdleMs>=2500?300:AutoTotem.safeIdleMs+100;
+                        case 12->AutoTotem.emergencyDirect=!AutoTotem.emergencyDirect;
+                        case 13->AutoTotem.emergencyHealth=AutoTotem.emergencyHealth>=20?2:AutoTotem.emergencyHealth+2;
+                        case 14->AutoTotem.priorityOnEmpty=!AutoTotem.priorityOnEmpty;
                     }
                     LexyClient.save();LexySounds.save();return true;
                 }
             }
         }else if(tab==9){
             int yy=panelY+86;
-            for(int i=0;i<LexyClient.ACCENTS.length;i++)if(inside(mx,my,rx+8+i*55,yy,45,28)){
+            for(int i=0;i<LexyClient.ACCENTS.length;i++){
+                int step=Math.min(55,Math.max(33,(rw-16)/LexyClient.ACCENTS.length));
+                if(!inside(mx,my,rx+8+i*step,yy,step-8,28))continue;
                 LexyClient.accentChoice=i;LexyClient.save();return true;
             }
             int base=yy+45;int visibleCount=Math.max(1,(panelY+panelH-45-base)/44);
@@ -837,7 +928,8 @@ public final class LexyScreen extends Screen {
             else if(tab==9)max=Math.max(0,19-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
             else if(tab==10){
                 if(cheatSection==0)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
-                else max=triggerSettingsOpen?Math.max(0,TRIGGER_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+                else if(cheatSection==1)max=triggerSettingsOpen?Math.max(0,TRIGGER_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+                else max=aimSettingsOpen?Math.max(0,AIM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
             }
             scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
         }return super.mouseScrolled(mx,my,amount);

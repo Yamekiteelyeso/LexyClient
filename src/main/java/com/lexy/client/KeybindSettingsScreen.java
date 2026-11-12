@@ -25,7 +25,7 @@ public final class KeybindSettingsScreen extends Screen {
         button("MACROS",left+12+half,top+50,half,25,b->{page=1;waiting=-1;clearAndInit();});
         if(page==0){
             button("‹",left+8,top+258,54,25,b->{group=Math.max(0,group-1);clearAndInit();});
-            button("›",left+panelWidth-62,top+258,54,25,b->{group=Math.min(1,group+1);clearAndInit();});
+            button("›",left+panelWidth-62,top+258,54,25,b->{group=Math.min(2,group+1);clearAndInit();});
             int start=group*4;
             for(int n=0;n<4;n++){
                 final int index=start+n;
@@ -60,7 +60,7 @@ public final class KeybindSettingsScreen extends Screen {
                 c.fill(left+8,y,left+panelWidth-8,y+31,0xFF1E2D40);
                 c.drawTextWithShadow(textRenderer,LexyKeybinds.label(i),left+18,y+10,0xFFE5F2FF);
             }
-            c.drawCenteredTextWithShadow(textRenderer,"Group "+(group+1)+" / 2",width/2,top+266,0xFF9CBAD9);
+            c.drawCenteredTextWithShadow(textRenderer,"Group "+(group+1)+" / 3",width/2,top+266,0xFF9CBAD9);
             if(waiting>=0){
                 c.fill(left+30,top+191,left+panelWidth-30,top+230,0xFA0D2943);
                 c.drawCenteredTextWithShadow(textRenderer,"Press a key · BACKSPACE to clear · ESC to cancel",width/2,top+204,0xFFEAF5FF);

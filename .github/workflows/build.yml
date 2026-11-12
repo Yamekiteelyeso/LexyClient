@@ -1,10 +1,8 @@
-name: Build LexyClient 2.5
+name: Build LexyClient 2.6
 on:
   push:
     branches: [main]
   workflow_dispatch:
-permissions:
-  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,6 +22,6 @@ jobs:
       - name: Publish built JAR
         uses: actions/upload-artifact@v4
         with:
-          name: LexyClient-2.5.0
+          name: LexyClient-2.6.0
           path: build/libs/*.jar
           if-no-files-found: error

@@ -1,12 +1,21 @@
-# LexyClient 2.5 — Guia rapida
+# LexyClient 2.6 — Slate Blue
 
-- Instala Fabric 1.20.1 con Java 17 y Fabric API; coloca el archivo compilado en `mods`.
-- Abre el cliente desde Shift derecho o el boton del menu de pausa.
-- `Cheats > AutoTotem`: selecciona DIRECT o INVENTORY. INVENTORY solo abre la interfaz al estar inactivo; durante el combate usa DIRECT si activaste la proteccion de combate y tu vida es baja.
-- `Cheats > TriggerBot`: habilita las condiciones de disparo; evita clics del raton cuando se usan ataques manuales.
-- `Keybinds`: configura teclas de cheats y macros; tambien aparecen en Minecraft > Opciones > Controles. Puedes guardar hasta cuatro comandos `/spawn` o mensajes para una sola pulsacion, con limite de frecuencia.
-- `Keybinds > Zoom`: por defecto se mantiene C pulsada para acercar. Cambia el nivel de zoom y elige entre mantener o alternar.
-- `Optimization`: selecciona preset POJAV o MAX FPS; el modo Adaptativo cambia poco a poco la distancia de renderizado cuando es necesario.
-- `Local Music`: coloca musica MP3 propia, WAV o AIFF en `.minecraft/config/lexy-music` y usa el reproductor de Minecraft. El soporte MP3 puede variar segun el audio de Pojav/Java.
+## Novedades
+- Aim Assist suave con selección de jugadores o mobs, FOV, distancia, suavidad, velocidad, altura de puntería, predicción y fijación de objetivo. **Desactivado por defecto**.
+- AutoTotem: intercambio directo de emergencia y prioridad para la mano secundaria vacía.
+- TriggerBot: comprobación de objetivo estable, intervalos variables, filtro de invisibles y golpes críticos opcionales.
+- Nuevas teclas: activar Aim Assist, mantener Aim Assist y desactivar de golpe todos los módulos de combate.
+- Cheats ahora tiene tres pestañas con configuración real.
+- Optimización: objetivo FPS y límites de distancia adaptativa configurables; nuevos acentos azules y grises.
 
-Spotify Free: en la GUI puedes abrir Spotify oficial, canciones y playlists. **No es posible transmitir la biblioteca protegida de Spotify dentro de Minecraft con cuenta Free** mediante su API. El reproductor Local Music no reproduce ni descarga canciones de Spotify.
+## Uso
+1. Instala Fabric Loader y Fabric API para Minecraft 1.20.1 con Java 17.
+2. Elimina todos los JAR antiguos de LexyClient de `mods`.
+3. Copia `lexy-client-2.6.0.jar` a `mods`.
+4. En Minecraft abre **Shift derecho → Cheats**: AutoTotem, TriggerBot y Aim Assist.
+5. En **Keybinds** asigna teclas para los tres módulos, zoom y cuatro macros. También aparecen en Controles de Minecraft.
+6. En **Optimization** ajusta Auto FPS, objetivo y límites de distancia. Para Pojav usa el preset POJAV.
+
+**Spotify:** la versión gratuita abre canciones en la aplicación oficial; la reproducción MP3 de archivos propios sí sucede dentro de Minecraft. El catálogo Spotify no se puede transmitir libremente dentro del juego con la cuenta Free.
+
+Esta versión se compila en CI, pero es necesario probar el comportamiento en cada teléfono y servidor. Algunas funciones automáticas están prohibidas en servidores multijugador.

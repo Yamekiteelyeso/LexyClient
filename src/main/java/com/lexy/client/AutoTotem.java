@@ -28,6 +28,8 @@ public final class AutoTotem {
     public static int inventoryStepMs = 200;
     public static int cooldownMs = 800;
     public static boolean notify = false;
+    public static boolean emergencyDirect = true, priorityOnEmpty = true;
+    public static int emergencyHealth = 8;
 
     private static int equipped, lastSource = -1, scheduledSource = -1, verifySource = -1, failures, confirmedTicks;
     private static long nextAction, verificationStart, verificationDeadline, lastInputAt;
@@ -93,7 +95,7 @@ public final class AutoTotem {
         if (scheduledSource < 0) {
             scheduledSource = source(mc.player.getInventory());
             if (scheduledSource < 0) { state = "No totems"; nextAction = time + 1200; return; }
-            nextAction = time + delay();
+            nextAction = time + (priorityOnEmpty && mc.player.getOffHandStack().isEmpty() ? 50 : delay());
             return;
         }
         int src = scheduledSource;
@@ -109,14 +111,15 @@ public final class AutoTotem {
             return;
         }
         boolean active = time - lastInputAt < Math.max(250, safeIdleMs);
-        if (mode == Mode.INVENTORY && active && !combatFallbackDirect) {
+        boolean emergency = emergencyDirect && mc.player.getHealth()<=Math.max(2,emergencyHealth);
+        if (mode == Mode.INVENTORY && active && !combatFallbackDirect && !emergency) {
             // Keep the player's normal mouse/gameplay control. Try again when idle.
             state = "Waiting for idle mouse";
             return;
         }
         scheduledSource = -1;
         try {
-            if (mode == Mode.INVENTORY && !active) {
+            if (mode == Mode.INVENTORY && !active && !emergency) {
                 running = new TotemInventoryScreen(mc.player, src);
                 state = "Opening inventory";
                 mc.setScreen(running);

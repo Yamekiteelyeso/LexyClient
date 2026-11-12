@@ -9,6 +9,7 @@ import java.util.function.*;
 public final class OptimizationManager {
     private OptimizationManager() {}
     public static boolean adaptiveEnabled = false;
+    public static int targetFps = 60, minimumDistance = 4, maximumDistance = 12;
     private static int measurements, fpsSum, secondsLow, secondsHigh;
     private static long nextTune;
     public static void tick(MinecraftClient mc) {
@@ -17,22 +18,29 @@ public final class OptimizationManager {
         fpsSum+=Math.max(1,mc.getCurrentFps());
         if(++measurements<20)return;
         int avg=fpsSum/measurements;fpsSum=0;measurements=0;
-        if(avg<43){secondsLow++;secondsHigh=0;}
-        else if(avg>88){secondsHigh++;secondsLow=0;}
+        int target=Math.max(30,Math.min(144,targetFps));
+        if(avg<Math.round(target*.78f)){secondsLow++;secondsHigh=0;}
+        else if(avg>Math.round(target*1.25f)){secondsHigh++;secondsLow=0;}
         else{secondsLow=0;secondsHigh=0;}
         long now=System.nanoTime()/1_000_000L;
         if(now<nextTune)return;
-        if(secondsLow>=8&&o().getViewDistance().getValue()>4) {
-            o().getViewDistance().setValue(Math.max(4,o().getViewDistance().getValue()-2));
+        if(secondsLow>=8&&o().getViewDistance().getValue()>Math.min(minimumDistance,maximumDistance)) {
+            o().getViewDistance().setValue(Math.max(Math.min(minimumDistance,maximumDistance),o().getViewDistance().getValue()-2));
             o().getParticles().setValue(ParticlesMode.MINIMAL);
             o().write();secondsLow=0;nextTune=now+25000;
-        } else if(secondsHigh>=25&&o().getViewDistance().getValue()<12) {
-            o().getViewDistance().setValue(Math.min(12,o().getViewDistance().getValue()+1));
+        } else if(secondsHigh>=25&&o().getViewDistance().getValue()<Math.max(minimumDistance,maximumDistance)) {
+            o().getViewDistance().setValue(Math.min(Math.max(minimumDistance,maximumDistance),o().getViewDistance().getValue()+1));
             o().write();secondsHigh=0;nextTune=now+30000;
         }
     }
     public record Entry(String name, String help, Supplier<String> value, IntConsumer adjust) {}
     public static final List<Entry> OPTIONS = List.of(
+        new Entry("Adaptive FPS Target", "Desired FPS for auto graphics tuning", ()->targetFps+" FPS",
+            d->targetFps=clamp(targetFps+d*10,30,144)),
+        new Entry("Adaptive Minimum Chunks", "Do not reduce render distance below this", ()->minimumDistance+" chunks",
+            d->minimumDistance=clamp(minimumDistance+d,2,maximumDistance)),
+        new Entry("Adaptive Maximum Chunks", "Do not raise render distance above this", ()->maximumDistance+" chunks",
+            d->maximumDistance=clamp(maximumDistance+d,minimumDistance,20)),
         new Entry("Simulation Distance", "Server-side simulation radius in singleplayer", ()->o().getSimulationDistance().getValue()+" chunks",
             d->o().getSimulationDistance().setValue(clamp(o().getSimulationDistance().getValue()+d*2,4,16))),
         new Entry("Render Distance", "Chunks rendered by your client", ()-> String.valueOf(o().getViewDistance().getValue())+" chunks",
