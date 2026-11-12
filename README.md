@@ -1,25 +1,31 @@
-# LexyClient 3.0.0 — Visible, usable, verifiable
+# LexyClient 4.0 — Ultimate Edition
 
-Fabric client-only mod for Minecraft **1.20.1**, Java 17, Fabric API.
+Minecraft 1.20.1 / Fabric / Java 17. A client-side mod with an original Lunar/Feather-inspired layout.
 
-## When the mod appears to do nothing
-1. Check **Mods** (if Mod Menu is installed). Look for `LexyClient`, version 3.0.0. Mod Menu is optional.
-2. On the title screen find **LEXY 3.0 OPEN MENU**; it also appears on Pause (ESC).
-3. Press **Right Shift** or **F8**. Both are registered key bindings. On Title/Pause the screen keyboard handler also opens the GUI.
-4. In-game, type **`/lexy`** (client-side, works even when the server has no Lexy plugin).
-5. Type **`/lexy status`**. If unknown, Fabric did not load LexyClient: check launcher profile, game version, `mods` folder and Fabric API.
-6. In `%APPDATA%\.minecraft\logs\latest.log`, search `[LexyClient 3.0.0]`. For crashes, send the log.
+## Install
+Put `lexy-client-4.0.0.jar` in the **active instance** `mods/` directory alongside Fabric API. Remove older LexyClient JAR files. Use Fabric 1.20.1, not Forge.
 
-## New practical features
-- Hand-drawn icon sprite atlas for the 12-section graphite-and-blue UI.
-- Utility tools: copy XYZ, auto sprint, reversible fullbright, loaded watermark, HUD editor, max FPS profile, reset UI, save settings.
-- `/lexy coords`, `/lexy status`, `/lexy resetui`, `/lexy sprint`, `/lexy bright`, `/lexy watermark`.
-- In-world visual indicator and action bar so you can verify the mod is really active.
-- 5 more useful HUD metrics: biome, server, day time, Java memory, empty inventory slots.
-- 4 additional real video options: brightness, GUI scale, chat opacity and chat scale.
-- Existing AutoTotem, TriggerBot, Aim Assist, AutoClicker, Zoom, macros, Spotify Connect, local MP3 playback and optimization retained.
+**Windows:** `%APPDATA%\.minecraft\mods` is only the default path. Launchers may use different instance folders.
 
-All options are real UI controls, not fake modules. Server protections and Spotify account restrictions still apply.
+**Amethyst (Android):** identify the active `.minecraft` directory in the launcher settings. One example observed in the user's previous log was `/storage/emulated/0/Android/data/git.artdeell.mjlaunch/files/.minecraft/mods/`. Android permissions and profiles may change this; use the actual game directory.
 
-## Build
-GitHub Actions builds `gradle build` on Java 17 with Fabric 1.20.1 mappings. The build proves Java compatibility and bundling. A separate GitHub startup smoke test launches Minecraft in Xvfb and checks the mod entrypoint plus resource reload; it still does not test actual gameplay or mouse/key interactions. Install only the remapped `.jar` alongside Fabric API, removing older LexyClient jars.
+If the `latest.log` `Loading ... mods:` section does not list `lexy-client 4.0.0`, Fabric **did not discover the file**. Changing keybinds or GUIs cannot fix that.
+
+## Controls
+- Right Shift: open / close modules
+- F8: backup menu
+- `/lexy`: open in-world (and `/lexy status` to check mod load)
+- Title screen and pause menu: Lexy button
+- Menu: 12 categories; HUD editor; Settings; Profiles; search and favorites
+- `ESC`: return to previous screen
+- On custom title screen, `ESC` opens vanilla title for recovery.
+
+## Functionality
+Four combat modules from Lexy 3.0, configurable macros, full-size HUD, waypoints, AutoSprint, AutoWalk, AutoTool, AutoRespawn, ToggleSneak, alerts, zoom, native video presets, adaptive frame-rate target, 7 themes, profile snapshots and optional local audio/Spotify API.
+
+Profile snapshots live in `.minecraft/config/lexy-profiles/` and UI settings in `.minecraft/config/lexy-ui-v4.json`. Existing 3.0 settings remain in `lexy-client.json`.
+
+Spotify's official API restricts in-game streaming and remote playback; local MP3 playback requires no premium account.
+
+## Verification
+Build with `gradle build` using the GitHub CI workflow. Headless startup smoke testing is supplemental; it cannot confirm mouse interactions, Pojav rendering or server gameplay. Do not mistake a successful compile for a complete functional test.

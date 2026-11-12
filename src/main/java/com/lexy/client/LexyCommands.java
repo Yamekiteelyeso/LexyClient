@@ -15,7 +15,7 @@ public final class LexyCommands {
                 .then(ClientCommandManager.literal("open").executes(ctx->{open(ctx.getSource().getClient());return 1;}))
                 .then(ClientCommandManager.literal("status").executes(ctx->{
                     var mc=ctx.getSource().getClient();
-                    ctx.getSource().sendFeedback(Text.literal("§bLexyClient 3.0.0 §aACTIVE §7| Fabric 1.20.1 | "+mc.getCurrentFps()+" FPS"));
+                    ctx.getSource().sendFeedback(Text.literal("§bLexyClient 4.0.0 §aACTIVE §7| Fabric 1.20.1 | "+mc.getCurrentFps()+" FPS"));
                     ctx.getSource().sendFeedback(Text.literal("§7Open: Right Shift / F8 / /lexy | Render: "+mc.getWindow().getScaledWidth()+"x"+mc.getWindow().getScaledHeight()));
                     return 1;
                 }))
@@ -28,6 +28,6 @@ public final class LexyCommands {
         });
     }
     public static void open(MinecraftClient mc){
-        if(mc!=null)mc.execute(()->mc.setScreen(new LexyScreen(false,0,null)));
+        if(mc!=null)mc.execute(()->mc.setScreen(new LexyModernScreen(null)));
     }
 }

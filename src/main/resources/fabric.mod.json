@@ -3,7 +3,7 @@
   "id": "lexy-client",
   "version": "${version}",
   "name": "LexyClient",
-  "description": "LexyClient 3.0 reliability release: clear loading feedback, /lexy fallback, RShift/F8, icon navigation, eight utility actions, graphics options, QoL and HUD.",
+  "description": "LexyClient 4.0 original module hub, safe title screen, profiles, themes, real gameplay utilities and optimization.",
   "environment": "client",
   "entrypoints": {
     "client": [

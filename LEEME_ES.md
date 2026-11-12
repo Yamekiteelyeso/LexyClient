@@ -1,15 +1,18 @@
-# LexyClient 3.0.0 — instalación y diagnóstico
+# LexyClient 4.0 Ultimate
 
-**Requisitos:** Minecraft Java 1.20.1, Fabric Loader, Fabric API, Java 17. No instales este JAR en Forge, NeoForge, Bedrock ni como plugin de servidor.
+### Instalar
+Usa **Minecraft Java 1.20.1 / Fabric / Java 17** y Fabric API. Copia el `.jar` de LexyClient a `mods` de **la instancia que ejecutas** y borra el JAR anterior.
 
-1. Cierra Minecraft. Elimina todas las versiones anteriores de LexyClient de `mods`.
-2. Coloca **lexy-client-3.0.0.jar** en la carpeta `mods` del perfil de Minecraft que usas.
-3. Abre el perfil **Fabric 1.20.1**. En el menú de título se debe mostrar **LEXY 3.0 OPEN MENU**.
-4. Pulsa **Shift derecho** o **F8**. También puedes abrir desde Pausa (ESC).
-5. Entra a un mundo y escribe **`/lexy`** o **`/lexy status`**. El comando es del cliente, no requiere permisos en un servidor.
-6. Si un ajuste de escala oculta el menú: **`/lexy resetui`**. Puedes usar `/lexy coords`, `/lexy sprint`, `/lexy bright` y `/lexy watermark`.
-7. Si Minecraft no muestra absolutamente nada, adjunta `%APPDATA%\.minecraft\logs\latest.log` y la pantalla del perfil del lanzador.
+En Amethyst/Android no siempre corresponde la carpeta de Windows. Confirma desde el launcher la ubicación real de `.minecraft`. Tu antiguo `latest.log` no listaba `lexy-client`, por lo tanto el mod ni siquiera se había cargado.
 
-**Lo nuevo:** nueva barra de navegación con iconos reales, ocho accesos útiles, marca de carga visible, HUD con métricas extra, opciones de FPS/chat/brillo/escala, acceso de emergencia F8 y comandos de diagnóstico.
+**Comprobar:** abre `latest.log`, busca `lexy-client 4.0.0` dentro de `Loading ... mods` y la línea `[LexyClient 4.0.0] Client entrypoint invoked`.
 
-La compilación automática verifica el bytecode Java y los recursos. No sustituye una prueba manual real con Minecraft ni demuestra el origen de un fallo en tu PC.
+### Abrir
+Shift derecho o F8, botón del título y pausa, `/lexy` dentro del mundo. `/lexy status` confirma si está cargado. ESC regresa. El menú nuevo permite regresar al título vanilla.
+
+### Mejoras
+Menú principal nuevo, 12 categorías, iconos, búsqueda, filtros, favoritos, panel de ajustes, 7 temas, perfiles guardados, AutoTool, AutoWalk, AutoRespawn, ToggleSneak, AutoJump vanilla, alertas, waypoint, opciones gráficas y HUD.
+
+Las opciones avanzadas de AutoTotem, TriggerBot, AimAssist y AutoClicker existentes siguen disponibles desde las tarjetas.
+
+**No se promete 100 % de funcionamiento en todos los launchers sin un test dentro del juego.** Si el mod aparece en el log pero no abre, manda `latest.log` y la información del perfil.

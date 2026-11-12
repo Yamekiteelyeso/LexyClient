@@ -143,7 +143,6 @@ public final class LexyClient implements ClientModInitializer {
   add("HUD","Effect 4",()->effect(3),false);
   add("HUD","FPS",()->mc.getCurrentFps()+"",true);
   add("HUD","Ping",LexyClient::ping,true);
-  add("HUD","Biome",()->LexyTools.biome(mc),false);
   add("HUD","Server",()->LexyTools.server(mc),false);
   add("HUD","Time",()->mc.world==null?"-":String.valueOf(mc.world.getTimeOfDay()%24000),false);
   add("HUD","Memory",()->{Runtime r=Runtime.getRuntime();return ((r.totalMemory()-r.freeMemory())/1048576L)+" MB";},false);
@@ -206,10 +205,10 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();
- System.out.println("[LexyClient 3.0.0] Client entrypoint invoked. Fabric loaded LexyClient.");
+ System.out.println("[LexyClient 4.0.0] Client entrypoint invoked. Fabric loaded LexyClient.");
  TitleBranding.register();LexyCommands.register();
  try{LexySounds.init();}catch(Exception ex){System.err.println("[LexyClient] Audio registration unavailable: "+ex);}
- sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"key.categories.lexyclient"));
+ sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();LexyTheme.load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"key.categories.lexyclient"));
  fallbackGuiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.backup_menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_F8,"key.categories.lexyclient"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
  ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;
   // Screens consume key-release events; this covers the same release after closing a screen.
@@ -217,25 +216,32 @@ public final class LexyClient implements ClientModInitializer {
      !InputUtil.isKeyPressed(client.getWindow().getHandle(),GLFW.GLFW_KEY_RIGHT_SHIFT))menuShiftReleased();
   while(guiKey.wasPressed() || fallbackGuiKey.wasPressed()){
   if(client.currentScreen==null && !allowMenuToggle())continue;
-  if(client.currentScreen instanceof LexyScreen current)current.close();
-  else if(client.currentScreen==null)client.setScreen(new LexyScreen(false));
- }while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);LexyTools.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();welcomeShown=false;return;}
- if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§bLEXY 3.0 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 3.0.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+  if(client.currentScreen instanceof LexyModernScreen current)current.close();
+  else if(client.currentScreen instanceof LexyScreen current)current.close();
+  else if(client.currentScreen==null)client.setScreen(new LexyModernScreen(null));
+ }while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);LexyTools.tick(client);LexyExtras.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();welcomeShown=false;return;}
+ if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§bLEXY 4.0 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 4.0.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
  HudRenderCallback.EVENT.register((context,delta)->{
-  if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen||mc.currentScreen instanceof HudEditorScreen)return;
+  if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen||mc.currentScreen instanceof LexyModernScreen||mc.currentScreen instanceof HudEditorScreen)return;
   HudRenderer.render(context,false,null);
+  if(LexyExtras.hasWaypoint && LexyExtras.waypointsHud){
+    String wp="WAYPOINT " + LexyExtras.waypointName + "  "+LexyExtras.waypoint();
+    int tw=Math.min(mc.getWindow().getScaledWidth()-12,mc.textRenderer.getWidth(wp)+20);
+    if(tw>20){context.fill(5,mc.getWindow().getScaledHeight()-47,tw+5,mc.getWindow().getScaledHeight()-29,0xDE101C2C);
+      context.drawTextWithShadow(mc.textRenderer,wp,13,mc.getWindow().getScaledHeight()-42,LexyTheme.palette().accent());}
+  }
   if(LexyTools.watermark){
     int sw=mc.getWindow().getScaledWidth();int y=mc.getWindow().getScaledHeight()-26;
     int x=Math.max(4,sw-168);
     context.fill(x,y,sw-5,y+19,0xD90F1C2C);
     context.fill(x,y,x+3,y+19,accent());
-    context.drawTextWithShadow(mc.textRenderer,"LEXY 3.0  |  RSHIFT / F8",x+10,y+6,0xFFC5E4FF);
+    context.drawTextWithShadow(mc.textRenderer,"LEXY 4.0  |  RSHIFT / F8",x+10,y+6,0xFFC5E4FF);
   }
  });
- net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);LexyTools.shutdown(client);});
+ net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);LexyTools.shutdown(client);LexyExtras.shutdown(client);LexyTheme.save();});
  }
  public static void save(){try{Files.createDirectories(CONFIG.getParent());JsonObject root=new JsonObject();JsonObject mods=new JsonObject();enabled.forEach(mods::addProperty);root.add("modules",mods);JsonObject coords=new JsonObject();positions.forEach(coords::addProperty);root.add("positions",coords);root.addProperty("configVersion",CONFIG_VERSION);
  JsonObject style=new JsonObject();style.addProperty("watermark",LexyTools.watermark);style.addProperty("autoSprint",LexyTools.autoSprint);style.addProperty("fullbright",LexyTools.fullbright);
