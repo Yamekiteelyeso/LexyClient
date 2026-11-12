@@ -40,6 +40,10 @@ jobs:
             echo "::error::LexyClient resources did not load"
             exit 1
           fi
+          if ! grep -F '[LexyClient 3.0.0] Title button registered' lexy-startup.log; then
+            echo "::error::Minecraft title screen never registered the Lexy button"
+            exit 1
+          fi
           if grep -E 'A crash report has been saved|Exception in thread "Render thread"|Failed to start the minecraft client' lexy-startup.log; then
             echo "::error::Minecraft emitted a startup crash"
             exit 1

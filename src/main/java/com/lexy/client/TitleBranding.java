@@ -30,6 +30,7 @@ public final class TitleBranding {
                 int bw=Math.min(162,Math.max(100,w/3));
                 Screens.getButtons(screen).add(ButtonWidget.builder(Text.literal("§bLEXY 3.0  §7OPEN MENU"),button->mc.setScreen(new LexyScreen(false,0,screen))).dimensions(8,Math.max(10,h-34),bw,22).build());
                 ScreenEvents.afterRender(screen).register((s,ctx,mouseX,mouseY,delta)->draw(ctx,w,h));
+                System.out.println("[LexyClient 3.0.0] Title button registered. GUI dimensions "+w+"x"+h);
             } else if (screen instanceof GameMenuScreen) {
                 int bw=Math.min(152,Math.max(95,w/3));
                 Screens.getButtons(screen).add(ButtonWidget.builder(Text.literal("§bLEXY 3.0  §7OPEN MENU"),button->mc.setScreen(new LexyScreen(false,0,screen))).dimensions(Math.max(6,w-bw-8),Math.max(5,h-32),bw,22).build());
