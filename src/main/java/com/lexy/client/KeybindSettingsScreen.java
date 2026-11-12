@@ -166,6 +166,6 @@ public final class KeybindSettingsScreen extends Screen {
         if(key==GLFW.GLFW_KEY_RIGHT_SHIFT)LexyClient.menuShiftReleased();
         return super.keyReleased(key,scan,mods);
     }
-    @Override public void close(){LexyKeybinds.save();LexySounds.close();if(client!=null)client.setScreen(parent);}
+    @Override public void close(){LexyClient.suppressMenuToggle();LexyKeybinds.save();LexySounds.close();if(client!=null)client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}
 }

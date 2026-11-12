@@ -301,6 +301,6 @@ public final class LexyModernScreen extends Screen {
         if(key==GLFW.GLFW_KEY_RIGHT_SHIFT||key==GLFW.GLFW_KEY_F8)LexyClient.menuShiftReleased();
         return super.keyReleased(key,scan,modifiers);
     }
-    @Override public void close(){LexyClient.menuShiftReleased();client.setScreen(parent);}
+    @Override public void close(){LexyClient.suppressMenuToggle();client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}
 }

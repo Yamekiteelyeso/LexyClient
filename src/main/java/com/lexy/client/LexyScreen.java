@@ -1194,6 +1194,6 @@ public final class LexyScreen extends Screen {
         if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT||keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_F8)LexyClient.menuShiftReleased();
         return super.keyReleased(keyCode,scanCode,modifiers);
     }
-    @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
+    @Override public void close(){LexyClient.suppressMenuToggle();LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}
 }

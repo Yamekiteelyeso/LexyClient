@@ -82,6 +82,8 @@ public final class LexyClient implements ClientModInitializer {
   lastGuiToggleNanos=now;return true;
  }
  public static void menuShiftReleased(){menuShiftHeld=false;}
+ /** Prevent buffered RSHIFT/F8 keypresses from reopening a screen after closing. */
+ public static void suppressMenuToggle(){menuShiftHeld=true;lastGuiToggleNanos=System.nanoTime();}
 
  private static long ticks, combatTicks, lastHitTick, sessionStart;
  private static int hits, swings, kills, deaths, longestCombo, combo, damageEvents, lastHealth = -1;
