@@ -1,0 +1,52 @@
+name: Lexy Minecraft Startup Smoke
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Verify display environment
+        run: |
+          command -v xvfb-run || { sudo apt-get update -qq && sudo apt-get install -y xvfb; }
+      - name: Boot the Fabric client in a virtual display
+        shell: bash
+        run: |
+          set +e
+          timeout --signal=TERM 180s xvfb-run -a -s "-screen 0 1280x720x24" gradle runClient --console=plain --no-daemon > lexy-startup.log 2>&1
+          result=$?
+          set -e
+          echo "runClient exit status: $result (124 indicates the test timeout)"
+          tail -n 75 lexy-startup.log
+          if ! grep -F '[LexyClient 3.0.0] Client entrypoint invoked' lexy-startup.log; then
+            echo "::error::Fabric did not report running LexyClient 3.0.0 entrypoint"
+            exit 1
+          fi
+          if grep -E 'A crash report has been saved|Exception in thread "Render thread"|Failed to start the minecraft client' lexy-startup.log; then
+            echo "::error::Minecraft emitted a startup crash"
+            exit 1
+          fi
+          echo "Fabric initialized LexyClient 3.0.0 in the Minecraft client."
+      - name: Upload startup diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LexyClient-startup-log
+          path: |
+            lexy-startup.log
+            run/logs/latest.log
+          if-no-files-found: warn
