@@ -17,7 +17,7 @@
 
 ## Diseño y controles
 
-La 4.1 usa fondos oscuros azul/gris, iconos originales, módulos en tarjetas, búsqueda, favoritos, temas y panel de configuración lateral. Pulsa **la tarjeta o el engranaje** para ver sus opciones; pulsa el botón **ENABLED/DISABLED** para activarla o desactivarla. En opciones de vídeo (como FPS Limit) el botón se muestra como **OPEN / APPLY**, no como un módulo permanente.
+La 4.1 usa fondos oscuros azul/gris, iconos originales, módulos en tarjetas, búsqueda, favoritos, temas y panel de configuración lateral. Pulsa **la tarjeta o el engranaje** para ver sus opciones; pulsa el botón **ENABLED/DISABLED** para activarla o desactivarla. En **Optimization** también encontrarás **Restore Graphics**, para deshacer el último perfil gráfico aplicado en esta sesión. En opciones de vídeo (como FPS Limit) el botón se muestra como **OPEN / APPLY**, no como un módulo permanente.
 
 **ESC** primero cierra el panel lateral. En **Profiles** puedes guardar, cargar y borrar (doble confirmación) un perfil local.
 

@@ -12,6 +12,8 @@ This release addresses visual quality and navigation rather than claiming a comp
 - Fixed dashboard shortcut hitboxes and skipped clicks on catalog cards outside the clipped viewport.
 - Performance: cache filtered module lists, settings arrays, and the profiles list rather than rebuilding during every render frame. Icons are packed into one atlas.
 - Compact-screen support with collapsed side rail and touch-friendly paging; vanilla title can always be recovered.
+- Dashboard now includes live FPS, ping, memory, enabled modules and elapsed session minutes.
+- Added a one-step Restore Graphics action that reverses the last graphics preset applied during this session. It honestly reports when no prior preset is available.
 - All existing combat, music, HUD, zoom, macros and performance features remain in the project.
 
 ## Limits / tests

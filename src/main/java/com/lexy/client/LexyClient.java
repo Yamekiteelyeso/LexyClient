@@ -82,10 +82,11 @@ public final class LexyClient implements ClientModInitializer {
   lastGuiToggleNanos=now;return true;
  }
  public static void menuShiftReleased(){menuShiftHeld=false;}
- /** Prevent buffered RSHIFT/F8 keypresses from reopening a screen after closing. */
+ /** Prevent a buffered RSHIFT/F8 keypress from reopening a screen immediately after closing it. */
  public static void suppressMenuToggle(){menuShiftHeld=true;lastGuiToggleNanos=System.nanoTime();}
 
  private static long ticks, combatTicks, lastHitTick, sessionStart;
+ public static long sessionMinutes(){return Math.max(0,(System.currentTimeMillis()-sessionStart)/60000L);}
  private static int hits, swings, kills, deaths, longestCombo, combo, damageEvents, lastHealth = -1;
  private static String lastTarget = "None";
  private static java.util.UUID lastAttacked; private static boolean wasDead;

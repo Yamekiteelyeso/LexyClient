@@ -60,6 +60,7 @@ public final class LexyModuleCatalog {
         add("Balanced Graphics","Optimization","Apply the BALANCED options preset","◐",()->false,()->OptimizationManager.apply("BALANCED"),5);
         add("Quality Graphics","Optimization","Apply the QUALITY options preset","✧",()->false,()->OptimizationManager.apply("QUALITY"),5);
         add("Android Preset","Optimization","Apply a low-overhead graphics profile","▰",()->false,()->OptimizationManager.apply("POJAV"),5);
+        add("Restore Graphics","Optimization","Undo the last preset without resetting Minecraft settings","↺",()->false,()->OptimizationManager.restorePreviousPreset(),5);
         add("Copy Coordinates","Utilities","Copy current XYZ coordinates to clipboard","⌁",()->false,()->LexyTools.copyCoords(MinecraftClient.getInstance()),-1);
         add("Save Waypoint","Utilities","Remember current XYZ in your profile","⌖",()->LexyExtras.hasWaypoint,()->LexyExtras.markWaypoint(MinecraftClient.getInstance()),-1);
         add("HUD Editor","Utilities","Drag HUD widgets and change layouts","▣",()->false,()->{
@@ -152,7 +153,7 @@ public final class LexyModuleCatalog {
             case "Fullbright", "Brightness" -> 25;
             case "HUD Editor", "Custom HUD Layout" -> 5;
             case "Keys & Macros" -> 21;
-            case "Reset UI Scale" -> 30;
+            case "Reset UI Scale", "Restore Graphics" -> 30;
             case "Local Music", "Spotify Integration", "UI Sounds" -> 8;
             case "Theme Picker" -> 9;
             case "HUD Opacity" -> 4;

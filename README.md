@@ -11,6 +11,7 @@ Use Fabric Loader + Fabric API and place only `lexy-client-4.1.0.jar` in the sel
 - The title is an original dark atmospheric backdrop, with actual navigation into Minecraft's world list, multiplayer, Realms (vanilla fallback), options and Lexy config.
 - A redesigned, Lunar/Feather-inspired but distinct visual system: large pictogram module cards, searchable categories, favorites, clear action states, advanced settings drawer and accessible compact layouts.
 - 32 hand-drawn original vector icons packaged as a single atlas, a rebuilt Lexy mark, seven persisted themes, and a functional profile save/load/delete flow.
+- The Dashboard shows FPS, ping, RAM, active modules and session time; Restore Graphics reverses the last video preset applied in this session.
 - Cached filtered module lists and settings rows; the GUI does not load images from disk every frame.
 - Existing functional AutoTotem, TriggerBot, AutoClicker, Aim Assist, music, HUD, and optimization logic is retained, as is the legacy advanced settings interface.
 

@@ -8,6 +8,29 @@ import java.util.function.*;
 /** Direct wrappers around Minecraft's actual 1.20.1 video settings. */
 public final class OptimizationManager {
     private OptimizationManager() {}
+    private record GraphicsSnapshot(int viewDistance,int simulationDistance,GraphicsMode graphics,
+            ParticlesMode particles,CloudRenderMode clouds,boolean shadows,boolean ao,int blend,
+            double entityScale,boolean vsync) {}
+    private static GraphicsSnapshot beforePreset;
+    public static boolean hasPreviousPreset(){return beforePreset!=null;}
+    /** One-step in-memory undo. The vanilla Options screen remains the source of truth. */
+    public static boolean restorePreviousPreset(){
+        GraphicsSnapshot s=beforePreset;
+        if(s==null)return false;
+        GameOptions o=o();
+        o.getViewDistance().setValue(s.viewDistance());
+        o.getSimulationDistance().setValue(s.simulationDistance());
+        o.getGraphicsMode().setValue(s.graphics());
+        o.getParticles().setValue(s.particles());
+        o.getCloudRenderMode().setValue(s.clouds());
+        o.getEntityShadows().setValue(s.shadows());
+        o.getAo().setValue(s.ao());
+        o.getBiomeBlendRadius().setValue(s.blend());
+        o.getEntityDistanceScaling().setValue(s.entityScale());
+        o.getEnableVsync().setValue(s.vsync());
+        o.write();beforePreset=null;
+        return true;
+    }
     public static boolean adaptiveEnabled = false;
     public static int targetFps = 60, minimumDistance = 4, maximumDistance = 12;
     private static int measurements, fpsSum, secondsLow, secondsHigh;
@@ -88,7 +111,12 @@ public final class OptimizationManager {
         o().write();
     }
     public static void apply(String mode){
+        if(!Set.of("POJAV","MAX FPS","BALANCED","QUALITY").contains(mode))return;
         GameOptions x=o();
+        beforePreset=new GraphicsSnapshot(x.getViewDistance().getValue(),x.getSimulationDistance().getValue(),
+                x.getGraphicsMode().getValue(),x.getParticles().getValue(),x.getCloudRenderMode().getValue(),
+                x.getEntityShadows().getValue(),x.getAo().getValue(),x.getBiomeBlendRadius().getValue(),
+                x.getEntityDistanceScaling().getValue(),x.getEnableVsync().getValue());
         switch(mode){
             case "POJAV" -> {
                 x.getViewDistance().setValue(4);x.getSimulationDistance().setValue(4);

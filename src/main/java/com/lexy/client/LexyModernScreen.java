@@ -59,7 +59,7 @@ public final class LexyModernScreen extends Screen {
         if(drawer!=null){int number=drawerSettings.size();
             int usable=bodyHeight()-108;return Math.max(0,number-Math.max(1,usable/53));}
         if(modules())return Math.max(0,(int)Math.ceil(filtered().size()/(double)cols)-visibleRows());
-        if(category.equals("Dashboard"))return Math.max(0,(330-bodyHeight()+30)/36);
+        if(category.equals("Dashboard"))return Math.max(0,(430-bodyHeight()+30)/36);
         if(category.equals("Profiles"))return Math.max(0,LexyTheme.profiles().size()-Math.max(1,(bodyHeight()-80)/37));
         return Math.max(0,(7*48+120-bodyHeight()+32)/44);
     }
@@ -196,17 +196,24 @@ public final class LexyModernScreen extends Screen {
         String name=client!=null&&client.getSession()!=null?client.getSession().getUsername():"Player";
         LexyPaint.title(c,"WELCOME, "+name.toUpperCase(Locale.ROOT),cx+15,yy+12,cw<270?1f:1.4f,LexyPaint.WHITE);
         LexyPaint.label(c,"Your client. Your way.",cx+15,yy+37,cw-24,p.accent());
-        if(hero>70)LexyPaint.label(c,"Active setup: "+LexyTheme.activeProfile+"  •  RSHIFT to return to the game",cx+15,yy+58,cw-27,LexyPaint.MUTED);
-        int statY=yy+hero+10,sw=(cw-16)/3;
-        Runtime run=Runtime.getRuntime();String[] names={"FPS","MEMORY","ENABLED"};
-        String[] values={String.valueOf(client.getCurrentFps()),(run.totalMemory()-run.freeMemory())/1048576L+" MB",
-                String.valueOf(LexyModuleCatalog.entries().stream().filter(e->!LexyModuleCatalog.isAction(e)&&e.enabled().getAsBoolean()).count())};
-        for(int i=0;i<3;i++){
-            int xx=cx+i*(sw+8);LexyPaint.rounded(c,xx,statY,sw,58,p.card());LexyPaint.border(c,xx,statY,sw,58,p.border());
-            LexyPaint.label(c,names[i],xx+9,statY+10,sw-14,LexyPaint.DIM);
-            LexyPaint.title(c,values[i],xx+9,statY+29,sw<95?1f:1.28f,LexyPaint.WHITE);
+        if(hero>70)LexyPaint.label(c,"Profile: "+LexyTheme.activeProfile+"  •  Session "+LexyClient.sessionMinutes()+" min  •  RSHIFT to resume",cx+15,yy+58,cw-27,LexyPaint.MUTED);
+        int statY=yy+hero+10,statCols=cw>=420?4:2,sw=(cw-(statCols-1)*8)/statCols;
+        Runtime run=Runtime.getRuntime();String[] names={"FPS","PING","MEMORY","ACTIVE"};
+        String ping="--";
+        if(client.player!=null&&client.getNetworkHandler()!=null){
+            var entry=client.getNetworkHandler().getPlayerListEntry(client.player.getUuid());
+            if(entry!=null)ping=entry.getLatency()+"ms";
         }
-        int quickY=statY+75;
+        String[] values={String.valueOf(client.getCurrentFps()),ping,
+                (run.totalMemory()-run.freeMemory())/1048576L+" MB",
+                String.valueOf(LexyModuleCatalog.entries().stream().filter(e->!LexyModuleCatalog.isAction(e)&&e.enabled().getAsBoolean()).count())};
+        for(int i=0;i<4;i++){
+            int xx=cx+(i%statCols)*(sw+8),sy=statY+(i/statCols)*66;
+            LexyPaint.rounded(c,xx,sy,sw,58,p.card());LexyPaint.border(c,xx,sy,sw,58,p.border());
+            LexyPaint.label(c,names[i],xx+9,sy+10,sw-14,LexyPaint.DIM);
+            LexyPaint.title(c,values[i],xx+9,sy+29,sw<95?1f:1.28f,LexyPaint.WHITE);
+        }
+        int quickY=statY+(statCols==4?1:2)*66+16;
         LexyPaint.label(c,"QUICK ACCESS",cx+3,quickY,cw,LexyPaint.MUTED);
         String[] actions={"Combat","HUD Editor","Max FPS","Keybinds","Waypoint","Profiles"};
         int columns=cw>=425?3:2,box=(cw-(columns-1)*8)/columns;
@@ -334,6 +341,9 @@ public final class LexyModernScreen extends Screen {
         }
     }
     private void invokeEntry(LexyModuleCatalog.Entry e){
+        if(e.name().equals("Restore Graphics")&&!OptimizationManager.hasPreviousPreset()){
+            status("No previous graphics preset to restore");return;
+        }
         try{e.toggle().run();LexyModuleCatalog.changed();invalidate();
             if(LexyModuleCatalog.isAction(e))status(e.name()+" applied");
         }catch(Exception ex){System.err.println("[Lexy] Module action failed: "+e.name()+": "+ex);status("Action failed: "+e.name());}
@@ -373,7 +383,7 @@ public final class LexyModernScreen extends Screen {
         }
         if(category.equals("Dashboard")){
             int hero=bodyHeight()<180?67:82;
-            int quick=viewTop-scroll*36+hero+10+75+20,columns=cw>=425?3:2,box=(cw-(columns-1)*8)/columns;
+            int quick=viewTop-scroll*36+hero+10+(cw>=420?66:132)+16+20,columns=cw>=425?3:2,box=(cw-(columns-1)*8)/columns;
             for(int i=0;i<6;i++){
                 int xx=cx+(i%columns)*(box+8),yy=quick+(i/columns)*39;
                 if(LexyPaint.hit(mx,my,xx,yy,box,31)){
