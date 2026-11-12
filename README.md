@@ -1,24 +1,11 @@
-# LexyClient 1.9
+# LexyClient 2.0 — Fabric 1.20.1
 
-A Fabric **Minecraft Java 1.20.1** client-side mod focused on mobile/desktop UI ergonomics. PojavLauncher support is a design goal, not a device-tested guarantee.
+Minecraft client mod for desktop/PojavLauncher with responsive interface, a curated draggable HUD, custom UI sounds, configurable performance presets and Spotify OAuth PKCE controls.
 
-Features: compact draggable HUD, FPS / server-reported ping badges, customizable HUD presets, responsive ClickGUI, accessible on-screen navigation and pause-menu entry point, dedicated Cheats > AutoTotem configuration, Spotify PKCE remote control, local WAV/AIFF music and graphics presets.
+- 4 original OGG UI chimes; adjustable volume and on/off.
+- Optimization/performance values are **menu-only**; in-game HUD strictly allowlists useful metrics and caps visible widget count.
+- Spotify Android ACTION_VIEW attempt, copy-login-URL fallback and secure manual callback paste to complete PKCE when loopback callbacks fail. Requires user's registered Spotify Developer application and exact redirect `http://127.0.0.1:43871/callback`.
 
-## Build
-Java 17 and Gradle 8.11.1:
+Run Gradle with Java 17 and Fabric Loom: `gradle build`. Dependencies: Fabric API 0.92.3+1.20.1.
 
-```sh
-gradle build
-```
-
-The distributable mod is `build/libs/lexy-client-1.9.0.jar` (not the sources jar). Requires Fabric Loader and Fabric API.
-
-## Controls
-- Right Shift: ClickGUI.
-- Left Shift or Escape: Close.
-- Right Control: in-world HUD editor.
-- On a touch screen, use the LexyClient button on the **pause menu**, then tap the navigation arrows, **MOVE HUD**, **X** and HUD **DONE**.
-
-Spotify authorization: public Client ID + PKCE, `http://127.0.0.1:43871/callback` registered in your developer application. Browser availability and loopback callback behavior vary on Android.
-
-See `LEEME_ES.md` for a Spanish installation guide and `RELEASE_NOTES.md` for change details.
+Full instructions: LEEME_ES.md.

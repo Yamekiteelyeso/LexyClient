@@ -25,6 +25,7 @@ public final class HudEditorScreen extends Screen {
     private int cellWidth(){return (barWidth()-16)/5;}
     private int presetWidth(){return (barWidth()-16)/3;}
 
+    @Override protected void init(){LexySounds.open();}
     @Override public void render(DrawContext ctx,int mx,int my,float delta){
         ctx.fill(0,0,width,height,0x33050916);
         if(LexyClient.hudShowGrid){
@@ -58,6 +59,7 @@ public final class HudEditorScreen extends Screen {
 
     @Override public boolean mouseClicked(double mx,double my,int button){
         if(button!=0)return super.mouseClicked(mx,my,button);
+        LexySounds.tap();
         int x=barLeft(),y=barTop(),w=barWidth();
         if(hit(mx,my,x,y,w,92)){
             if(hit(mx,my,x+w-59,y+5,52,20)){close();return true;}
@@ -111,6 +113,6 @@ public final class HudEditorScreen extends Screen {
         return super.keyPressed(keyCode,scanCode,modifiers);
     }
 
-    @Override public void close(){LexyClient.save();if(client!=null)client.setScreen(parent);}
+    @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}
 }

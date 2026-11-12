@@ -1,0 +1,38 @@
+{
+  "tap": {
+    "sounds": [
+      {
+        "name": "lexy-client:tap",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "toggle": {
+    "sounds": [
+      {
+        "name": "lexy-client:toggle",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "open": {
+    "sounds": [
+      {
+        "name": "lexy-client:open",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "close": {
+    "sounds": [
+      {
+        "name": "lexy-client:close",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  }
+}

@@ -36,6 +36,9 @@ public final class LexyClient implements ClientModInitializer {
  public static final net.minecraft.util.Identifier LOGO = new net.minecraft.util.Identifier("lexy-client", "textures/gui/logo.png");
  public static boolean hudBackground = true, hudShadow = true, compactHud = false, spotifyHud = true;
  public static String spotifyClientId = "";
+ public static boolean uiSounds=true;
+ public static int uiSoundVolume=35;
+ public static int maxHudWidgets=7;
  public static int localMusicVolume=65; public static boolean localMusicLoop=false;
  public static final int[] ACCENTS = {0xFF3B82F6,0xFF60A5FA,0xFF2563EB,0xFF22D3EE};
  public static int accent(){return ACCENTS[Math.floorMod(accentChoice,ACCENTS.length)];}
@@ -49,16 +52,16 @@ public final class LexyClient implements ClientModInitializer {
    case 1 -> Set.of("FPS", "Ping", "Health", "Totems", "Low Health Alert");
    default -> Set.of("FPS", "Ping", "Health", "Totems", "Mainhand Durability", "Low Health Alert", "Speed", "XYZ X", "XYZ Y", "XYZ Z");
   };
-  for(Module m:MODULES) if(m.drawInHud()) enabled.put(m.id(),keep.contains(m.id()));
+  for(Module m:MODULES) if(m.drawInHud() && HudRenderer.isRelevant(m)) enabled.put(m.id(),keep.contains(m.id()));
   compactHud = true;hudMinimal = preset == 0;
   positions.clear();save();
  }
 
- private static final int CONFIG_VERSION = 190;
+ private static final int CONFIG_VERSION = 200;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
-   if(module.drawInHud()) enabled.put(module.id(), keep.contains(module.id()));
+   if(module.drawInHud() && HudRenderer.isRelevant(module)) enabled.put(module.id(), keep.contains(module.id()));
   }
   enabled.put("AutoTotem", enabled.getOrDefault("AutoTotem", false));
   compactHud = true;
@@ -169,11 +172,11 @@ public final class LexyClient implements ClientModInitializer {
   add("HUD","Ender Chests",()->inventory(Items.ENDER_CHEST),false);
   add("HUD","Netherite Swords",()->inventory(Items.NETHERITE_SWORD),false);
   add("HUD","Netherite Axes",()->inventory(Items.NETHERITE_AXE),false);
-  add("Performance","Render Distance",()->mc.options.getViewDistance().getValue()+" chunks",false);
-  add("Performance","FPS Limit",()->mc.options.getMaxFps().getValue()+" FPS",false);
-  add("Performance","Particles Mode",()->mc.options.getParticles().getValue().toString(),false);
-  add("Performance","Graphics Quality",()->mc.options.getGraphicsMode().getValue().toString(),false);
-  add("Performance","Entity Render Scale",()->Math.round(mc.options.getEntityDistanceScaling().getValue()*100)+"%",false);
+  addAction("Performance","Render Distance",()->mc.options.getViewDistance().getValue()+" chunks",false);
+  addAction("Performance","FPS Limit",()->mc.options.getMaxFps().getValue()+" FPS",false);
+  addAction("Performance","Particles Mode",()->mc.options.getParticles().getValue().toString(),false);
+  addAction("Performance","Graphics Quality",()->mc.options.getGraphicsMode().getValue().toString(),false);
+  addAction("Performance","Entity Render Scale",()->Math.round(mc.options.getEntityDistanceScaling().getValue()*100)+"%",false);
   add("Music","Spotify Now Playing",()->SpotifyController.INSTANCE.playing(),false);
   add("Music","Spotify Connection",()->SpotifyController.INSTANCE.status(),false);
   add("Music","Local Track",()->LocalMusicPlayer.INSTANCE.current(),false);
@@ -181,7 +184,7 @@ public final class LexyClient implements ClientModInitializer {
 
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
- @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
+ @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
  ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));AutoTotem.tick(client);if(client.player==null){lastHealth=-1;return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
  HudRenderCallback.EVENT.register((context,delta)->{
@@ -195,6 +198,7 @@ public final class LexyClient implements ClientModInitializer {
  style.addProperty("accentChoice",accentChoice);
  style.addProperty("menuScalePercent",menuScalePercent);style.addProperty("hudScalePercent",hudScalePercent);
  style.addProperty("hudGridSize",hudGridSize);style.addProperty("hudGridSnap",hudGridSnap);style.addProperty("hudShowGrid",hudShowGrid);style.addProperty("hudBackground",hudBackground);
+ style.addProperty("uiSounds",uiSounds);style.addProperty("uiSoundVolume",uiSoundVolume);style.addProperty("maxHudWidgets",maxHudWidgets);
  style.addProperty("hudPreset",hudPreset);style.addProperty("hudMinimal",hudMinimal);style.addProperty("hudShadow",hudShadow);style.addProperty("compactHud",compactHud);style.addProperty("spotifyHud",spotifyHud);
  style.addProperty("lowHealthThreshold",lowHealthThreshold);style.addProperty("armorWarnPercent",armorWarnPercent);style.addProperty("hudTextColor",hudTextColor);
  JsonObject totem=new JsonObject();totem.addProperty("onlyWhenEmpty",AutoTotem.onlyWhenEmpty);totem.addProperty("lowHealthOnly",AutoTotem.lowHealthOnly);totem.addProperty("healthThreshold",AutoTotem.healthThreshold);totem.addProperty("intervalTicks",AutoTotem.intervalTicks);totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
@@ -212,6 +216,9 @@ public final class LexyClient implements ClientModInitializer {
  if(style.has("hudGridSnap"))hudGridSnap=style.get("hudGridSnap").getAsBoolean();
  if(style.has("hudShowGrid"))hudShowGrid=style.get("hudShowGrid").getAsBoolean();
  if(style.has("hudBackground"))hudBackground=style.get("hudBackground").getAsBoolean();
+ if(style.has("uiSounds"))uiSounds=style.get("uiSounds").getAsBoolean();
+ if(style.has("uiSoundVolume"))uiSoundVolume=Math.max(0,Math.min(100,style.get("uiSoundVolume").getAsInt()));
+ if(style.has("maxHudWidgets"))maxHudWidgets=Math.max(3,Math.min(10,style.get("maxHudWidgets").getAsInt()));
  if(style.has("hudPreset"))hudPreset=Math.max(0,Math.min(2,style.get("hudPreset").getAsInt()));
  if(style.has("hudMinimal"))hudMinimal=style.get("hudMinimal").getAsBoolean();
  if(style.has("hudShadow"))hudShadow=style.get("hudShadow").getAsBoolean();

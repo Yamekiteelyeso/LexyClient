@@ -1,32 +1,26 @@
-# LexyClient 1.9 — Fabric 1.20.1
+# LexyClient 2.0 — PC y PojavLauncher
 
-## Instalación PC
-1. Instala **Fabric Loader** para Minecraft Java 1.20.1.
-2. Coloca **Fabric API** y el `.jar` de LexyClient 1.9 en `.minecraft/mods`.
-3. Retira cualquier versión antigua de LexyClient antes de iniciar.
-4. Abre con **Shift derecho** o con el botón en el menú de pausa.
+## Instalación
+- Minecraft 1.20.1 + Fabric Loader + Fabric API; Java 17.
+- Coloca `lexy-client-2.0.0.jar` en `mods`, quitando otros LexyClient antiguos.
+- Menú de pausa > LexyClient, o SHIFT derecho en teclado. RCTRL: editor de HUD.
 
-## Instalación PojavLauncher (Android)
-1. Crea un perfil Minecraft Java 1.20.1 con **Fabric**; selecciona Java 17.
-2. Coloca Fabric API y LexyClient en el directorio `mods` de ese perfil de Pojav.
-3. En Minecraft, pausa y toca **LexyClient Menu**; no necesitas teclas físicas.
-4. Usa **UP / DOWN** para navegar, **X** para cerrar y **MOVE HUD** para cambiar los indicadores.
-5. El editor tiene **DONE** y presets. Las posiciones se guardan proporcionalmente.
+## HUD y optimización
+- Rendimiento y optimización se muestran **únicamente en el menú**, nunca como indicadores flotantes.
+- El HUD permite solo métricas relevantes (FPS, ping, salud, comida, tótems, efectos, alertas, coordenadas...), con límite predeterminado de 7 widgets.
+- Oculta alertas cuando están OK y opciones apagadas. Puedes activar/desactivar cada widget y moverlo.
+- Tres perfiles: Minimal, Normal y Extended. En Appearance cambia Max HUD Widgets.
+- Se incluyen cuatro sonidos originales, ajustables desde Appearance > UI Sounds / UI Sound Volume.
 
-*Nota:* El `.jar` es un mod de Minecraft Java, no un APK Android. Que compile en Fabric no garantiza compatibilidad con cada móvil, versión de Pojav o renderer.
+## Spotify en PojavLauncher / móvil
+1. Desde https://developer.spotify.com/dashboard crea una aplicación Spotify.
+2. Registra EXACTAMENTE la URI de retorno: `http://127.0.0.1:43871/callback` (HTTP 127.0.0.1 está permitido como loopback según Spotify).
+3. Introduce el **Client ID público** en la pestaña Spotify (NO el Client Secret).
+4. Pulsa LOGIN WITH SPOTIFY. Se intenta abrir el navegador Android mediante ACTION_VIEW; si no se abre, pulsa COPY LOGIN URL y pégalo en el navegador.
+5. Autoriza tu cuenta en Spotify. Si se vuelve al mod, la conexión será automática.
+6. Si el navegador da fallo al llegar a 127.0.0.1, **copia la URL completa** de la barra de direcciones (`http://127.0.0.1:43871/callback?code=...&state=...`), regresa al juego, pega la URL en el campo de retorno y pulsa FINISH LOGIN FROM CALLBACK URL.
+7. La cuenta debe tener permisos para esa aplicación en Spotify Developer, y algunos controles de reproducción requieren Spotify Premium y una sesión de Spotify abierta en el teléfono u otro dispositivo.
 
-## HUD
-- **Minimal:** FPS y Ping.
-- **Normal:** FPS, Ping, Salud, Tótems y aviso de poca salud solo cuando corresponda.
-- **Extended:** añade más métricas seleccionadas.
-- Solo se muestran métricas habilitadas y con datos útiles. Puedes arrastrarlas y ajustar tamaño.
+El mod usa PKCE y verifica el parámetro `state`. Nunca introduces tu contraseña de Spotify en LexyClient. Los tokens se mantienen en memoria hasta cerrar Minecraft.
 
-## Spotify
-1. Crea una aplicación en https://developer.spotify.com/dashboard.
-2. Registra exactamente `http://127.0.0.1:43871/callback` en sus redirect URIs.
-3. Copia el **Client ID público** (no el Client Secret) a la pestaña Spotify.
-4. Pulsa **LOGIN WITH SPOTIFY** y autoriza en tu navegador.
-5. En Android, si el navegador no se abre, pulsa **COPY URL** y abre el enlace en un navegador del **mismo dispositivo**; el navegador debe poder acceder a `127.0.0.1:43871` localmente.
-6. **CANCEL LOGIN** descarta una autorización pendiente; **DISCONNECT** cierra la sesión local.
-
-Spotify sigue usando su API para control de reproducción: no se transmiten canciones dentro del juego. La reproducción/control depende de la cuenta y disponibilidad de dispositivos y permisos de Spotify.
+**Limitación importante:** el mod no reproduce canciones de Spotify en sí mismo; controla Spotify mediante su Web API. No hay garantía sin probar PojavLauncher en un teléfono real. Si el login falla, consulta el estado que aparece en la pestaña Spotify.

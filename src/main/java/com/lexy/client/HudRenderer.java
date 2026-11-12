@@ -27,6 +27,16 @@ public final class HudRenderer {
         if (label.equals("Low Health Alert") && "OK".equalsIgnoreCase(v)) return true;
         return false;
     }
+    /** Only genuinely useful in-game metrics may occupy the HUD. Performance configuration stays menu-only. */
+    private static final Set<String> GAME_HUD = Set.of(
+            "FPS","Ping","Health","Absorption","Food","Totems","Golden Apples","Ender Pearls",
+            "Mainhand Durability","Offhand Item","Speed","XYZ X","XYZ Y","XYZ Z","Facing",
+            "Low Health Alert","Low Helmet Alert","Low Chest Alert","Low Legs Alert","Low Boots Alert",
+            "Totem Stock Warning","Effect 1","Effect 2","Effect 3","Effect 4");
+    public static boolean isRelevant(LexyClient.Module module){
+        return module.drawInHud() && GAME_HUD.contains(module.id()) &&
+            (module.category().equals("HUD") || module.category().equals("Utilities"));
+    }
     public static List<Widget> layout() {
         MinecraftClient mc=MinecraftClient.getInstance();
         int sw=mc.getWindow().getScaledWidth(), sh=mc.getWindow().getScaledHeight();
@@ -35,7 +45,7 @@ public final class HudRenderer {
         List<Widget> widgets=new ArrayList<>();
         int fallbackX=8, fallbackY=8, columnW=0;
         for (LexyClient.Module module:LexyClient.MODULES) {
-            if (!module.drawInHud() || !LexyClient.enabled.getOrDefault(module.id(), false)) continue;
+            if (!isRelevant(module) || !LexyClient.enabled.getOrDefault(module.id(), false)) continue;
             if (!LexyClient.spotifyHud && module.category().equals("Music")) continue;
             String value;
             try {
@@ -66,6 +76,7 @@ public final class HudRenderer {
             x=Math.max(0,Math.min(Math.max(0,sw-w),x));
             y=Math.max(0,Math.min(Math.max(0,sh-entryH),y));
             widgets.add(new Widget(label,label,value,x,y,w,entryH));
+            if(widgets.size()>=LexyClient.maxHudWidgets) break;
             fallbackY+=Math.max(entryH+1,Math.round(LexyClient.hudSpacing*scale));
             columnW=Math.max(columnW,w);
         }
