@@ -998,3 +998,38 @@ public final class LexyScreen extends Screen {
             LexyClient.positions.put(m.id(),(int)Math.max(0,Math.min(width-55,(mx-dragDX-rightX())/scale)));
             LexyClient.positions.put(m.id()+".y",(int)Math.max(0,Math.min(height-20,(my-dragDY-contentY())/scale)));
             return true;
+        }return super.mouseDragged(mx,my,button,dx,dy);
+    }
+    @Override public boolean mouseReleased(double mx,double my,int button){
+        mx=logical(mx);my=logical(my);
+        if(dragging){dragging=false;LexyClient.save();return true;}
+        return super.mouseReleased(mx,my,button);
+    }
+    @Override public boolean mouseScrolled(double mx,double my,double amount){
+        mx=logical(mx);my=logical(my);
+        if(inside(mx,my,panelX+7,panelY+65,sidebarW-8,panelH-117)){
+            navScroll=Math.max(0,Math.min(navLimit(),navScroll-(int)Math.signum(amount)*2));return true;
+        }
+        if(inside(mx,my,rightX(),contentY(),rightW(),contentH())||tab==6||tab==7||tab==8||tab==9||tab==10){
+            int max=0;
+            if(modular())max=maxScroll(filtered().size());
+            else if(tab==5||tab==6)max=Math.max(0,OptimizationManager.OPTIONS.size()-Math.max(1,(panelY+panelH-35-(panelY+115))/48));
+            else if(tab==7){
+                SpotifyController sp=SpotifyController.INSTANCE;
+                int count=spotifyView==1?sp.devices().size():spotifyView==2?sp.playlists().size():sp.tracks().size();
+                max=Math.max(0,count-Math.max(1,(panelY+panelH-30-(panelY+282))/(spotifyView==1?31:32)));
+            }
+            else if(tab==8)max=Math.max(0,LocalMusicPlayer.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+248))/31));
+            else if(tab==9)max=Math.max(0,19-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
+            else if(tab==10){
+                if(cheatSection==0)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+                else if(cheatSection==1)max=triggerSettingsOpen?Math.max(0,TRIGGER_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+                else if(cheatSection==2)max=aimSettingsOpen?Math.max(0,AIM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+                else max=clickerSettingsOpen?Math.max(0,CLICKER_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
+            }
+            scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
+        }return super.mouseScrolled(mx,my,amount);
+    }
+    @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
+    @Override public boolean shouldPause(){return false;}
+}
