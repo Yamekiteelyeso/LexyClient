@@ -27,13 +27,17 @@ jobs:
         shell: bash
         run: |
           set +e
-          timeout --signal=TERM 180s xvfb-run -a -s "-screen 0 1280x720x24" gradle runClient --console=plain --no-daemon > lexy-startup.log 2>&1
+          timeout --signal=TERM 110s env ALSOFT_DRIVERS=null xvfb-run -a -s "-screen 0 1280x720x24" gradle runClient --console=plain --no-daemon > lexy-startup.log 2>&1
           result=$?
           set -e
           echo "runClient exit status: $result (124 indicates the test timeout)"
           tail -n 75 lexy-startup.log
           if ! grep -F '[LexyClient 3.0.0] Client entrypoint invoked' lexy-startup.log; then
             echo "::error::Fabric did not report running LexyClient 3.0.0 entrypoint"
+            exit 1
+          fi
+          if ! grep -E 'Reloading ResourceManager:.*lexy-client' lexy-startup.log; then
+            echo "::error::LexyClient resources did not load"
             exit 1
           fi
           if grep -E 'A crash report has been saved|Exception in thread "Render thread"|Failed to start the minecraft client' lexy-startup.log; then

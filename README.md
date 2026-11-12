@@ -22,4 +22,4 @@ Fabric client-only mod for Minecraft **1.20.1**, Java 17, Fabric API.
 All options are real UI controls, not fake modules. Server protections and Spotify account restrictions still apply.
 
 ## Build
-GitHub Actions builds `gradle build` on Java 17 with Fabric 1.20.1 mappings. The build proves Java compatibility and bundling, **not actual gameplay/runtime**. Install only the remapped `.jar` alongside Fabric API, removing older LexyClient jars.
+GitHub Actions builds `gradle build` on Java 17 with Fabric 1.20.1 mappings. The build proves Java compatibility and bundling. A separate GitHub startup smoke test launches Minecraft in Xvfb and checks the mod entrypoint plus resource reload; it still does not test actual gameplay or mouse/key interactions. Install only the remapped `.jar` alongside Fabric API, removing older LexyClient jars.
