@@ -39,6 +39,7 @@ public final class AutoTotem {
 
     private static long now() { return System.nanoTime() / 1_000_000L; }
     public static int swaps() { return equipped; }
+    public static boolean inProgress() { return running != null || verifySource >= 0; }
     public static boolean busy(MinecraftClient mc) {
         return mc == null || mc.player == null || mc.options.attackKey.isPressed() || mc.options.useKey.isPressed()
                 || mc.player.isUsingItem() || mc.player.handSwinging;

@@ -58,7 +58,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();HudRenderer.invalidate();save();
  }
 
- private static final int CONFIG_VERSION = 260;
+ private static final int CONFIG_VERSION = 270;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -98,6 +98,7 @@ public final class LexyClient implements ClientModInitializer {
   addAction("AutoTotem", "AutoTotem", AutoTotem::status, false);
   addAction("TriggerBot", "TriggerBot", TriggerBot::status, false);
   addAction("AimAssist", "AimAssist", AimAssist::status, false);
+  addAction("AutoClicker", "AutoClicker", AutoClicker::status, false);
   add("AutoTotem", "AutoTotem Swaps", () -> String.valueOf(AutoTotem.swaps()), false);
   add("Utilities", "Totem Stock Warning", () -> Integer.parseInt(inventory(Items.TOTEM_OF_UNDYING)) <= 2 ? "LOW TOTEMS" : "OK", false);
   add("Combat","Target Name",LexyClient::target,false);
@@ -188,7 +189,7 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
- ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);AutoTotem.tick(client);AimAssist.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+ ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
@@ -231,6 +232,16 @@ public final class LexyClient implements ClientModInitializer {
  aim.addProperty("requireHold",AimAssist.requireHold);aim.addProperty("requireWeapon",AimAssist.requireWeapon);
  aim.addProperty("ignoreTeammates",AimAssist.ignoreTeammates);aim.addProperty("ignoreInvisible",AimAssist.ignoreInvisible);
  root.add("aimAssist",aim);
+ JsonObject clicker=new JsonObject();clicker.addProperty("buttons",AutoClicker.buttons.name());
+ clicker.addProperty("activation",AutoClicker.activation.name());
+ clicker.addProperty("minCps",AutoClicker.minCps);clicker.addProperty("maxCps",AutoClicker.maxCps);
+ clicker.addProperty("jitterMs",AutoClicker.jitterMs);clicker.addProperty("leftReachTenths",AutoClicker.leftReachTenths);
+ clicker.addProperty("attackChargePercent",AutoClicker.attackChargePercent);
+ clicker.addProperty("requireWeapon",AutoClicker.requireWeapon);clicker.addProperty("ignoreTeam",AutoClicker.ignoreTeam);
+ clicker.addProperty("ignoreInvisible",AutoClicker.ignoreInvisible);clicker.addProperty("airSwings",AutoClicker.airSwings);
+ clicker.addProperty("rightClickBlocks",AutoClicker.rightClickBlocks);clicker.addProperty("rightClickItems",AutoClicker.rightClickItems);
+ clicker.addProperty("requireSneak",AutoClicker.requireSneak);clicker.addProperty("pauseWhileUsing",AutoClicker.pauseWhileUsing);
+ clicker.addProperty("pauseDuringTotem",AutoClicker.pauseDuringTotem);root.add("autoClicker",clicker);
  JsonObject zoom=new JsonObject();zoom.addProperty("percent",ZoomController.zoomPercent);zoom.addProperty("toggleMode",ZoomController.toggleMode);root.add("zoom",zoom);root.addProperty("adaptiveFps",OptimizationManager.adaptiveEnabled);
  root.addProperty("adaptiveFpsTarget",OptimizationManager.targetFps);
  root.addProperty("adaptiveMinDistance",OptimizationManager.minimumDistance);
@@ -307,6 +318,23 @@ public final class LexyClient implements ClientModInitializer {
  if(a.has("requireWeapon"))AimAssist.requireWeapon=a.get("requireWeapon").getAsBoolean();
  if(a.has("ignoreTeammates"))AimAssist.ignoreTeammates=a.get("ignoreTeammates").getAsBoolean();
  if(a.has("ignoreInvisible"))AimAssist.ignoreInvisible=a.get("ignoreInvisible").getAsBoolean();}
+ if(root.has("autoClicker")){JsonObject a=root.getAsJsonObject("autoClicker");
+ if(a.has("buttons"))try{AutoClicker.buttons=AutoClicker.Buttons.valueOf(a.get("buttons").getAsString());}catch(IllegalArgumentException ignored){}
+ if(a.has("activation"))try{AutoClicker.activation=AutoClicker.Activation.valueOf(a.get("activation").getAsString());}catch(IllegalArgumentException ignored){}
+ if(a.has("minCps"))AutoClicker.minCps=Math.max(1,Math.min(18,a.get("minCps").getAsInt()));
+ if(a.has("maxCps"))AutoClicker.maxCps=Math.max(AutoClicker.minCps,Math.min(18,a.get("maxCps").getAsInt()));
+ if(a.has("jitterMs"))AutoClicker.jitterMs=Math.max(0,Math.min(100,a.get("jitterMs").getAsInt()));
+ if(a.has("leftReachTenths"))AutoClicker.leftReachTenths=Math.max(20,Math.min(30,a.get("leftReachTenths").getAsInt()));
+ if(a.has("attackChargePercent"))AutoClicker.attackChargePercent=Math.max(0,Math.min(100,a.get("attackChargePercent").getAsInt()));
+ if(a.has("requireWeapon"))AutoClicker.requireWeapon=a.get("requireWeapon").getAsBoolean();
+ if(a.has("ignoreTeam"))AutoClicker.ignoreTeam=a.get("ignoreTeam").getAsBoolean();
+ if(a.has("ignoreInvisible"))AutoClicker.ignoreInvisible=a.get("ignoreInvisible").getAsBoolean();
+ if(a.has("airSwings"))AutoClicker.airSwings=a.get("airSwings").getAsBoolean();
+ if(a.has("rightClickBlocks"))AutoClicker.rightClickBlocks=a.get("rightClickBlocks").getAsBoolean();
+ if(a.has("rightClickItems"))AutoClicker.rightClickItems=a.get("rightClickItems").getAsBoolean();
+ if(a.has("requireSneak"))AutoClicker.requireSneak=a.get("requireSneak").getAsBoolean();
+ if(a.has("pauseWhileUsing"))AutoClicker.pauseWhileUsing=a.get("pauseWhileUsing").getAsBoolean();
+ if(a.has("pauseDuringTotem"))AutoClicker.pauseDuringTotem=a.get("pauseDuringTotem").getAsBoolean();}
  if(root.has("zoom")){JsonObject z=root.getAsJsonObject("zoom");if(z.has("percent"))ZoomController.zoomPercent=Math.max(15,Math.min(70,z.get("percent").getAsInt()));if(z.has("toggleMode"))ZoomController.toggleMode=z.get("toggleMode").getAsBoolean();}
  if(root.has("adaptiveFps"))OptimizationManager.adaptiveEnabled=root.get("adaptiveFps").getAsBoolean();
  if(root.has("adaptiveFpsTarget"))OptimizationManager.targetFps=Math.max(30,Math.min(144,root.get("adaptiveFpsTarget").getAsInt()));

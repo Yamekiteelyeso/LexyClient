@@ -29,6 +29,7 @@ public final class TriggerBot {
     public static void tick(MinecraftClient mc) {
         if (!LexyClient.enabled.getOrDefault("TriggerBot",false) || mc==null || mc.player==null || mc.world==null
                 || mc.interactionManager==null || mc.currentScreen!=null || !mc.player.isAlive() || mc.player.isSpectator()) return;
+        if (AutoClicker.handlesLeft(mc)) return; // Prevent duplicate automated attacks.
         if (mc.player.isUsingItem() || mc.options.useKey.isPressed() || (avoidManualClicks && mc.options.attackKey.isPressed())) return;
         if (requireHold && !LexyKeybinds.triggerHold.isPressed()) return;
         if (requireSneak && !mc.options.sneakKey.isPressed()) return;

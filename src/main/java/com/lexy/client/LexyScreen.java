@@ -15,8 +15,8 @@ public final class LexyScreen extends Screen {
     private final boolean editor;
     private int tab, scroll=0, navScroll=0, selected=-1, dragDX=0, dragDY=0;
     private final Screen parent;
-    private boolean dragging=false, totemSettingsOpen=false, triggerSettingsOpen=false, aimSettingsOpen=false, spotifyFreeView=true;
-    private int cheatSection=0; // 0 AutoTotem, 1 TriggerBot, 2 Aim Assist
+    private boolean dragging=false, totemSettingsOpen=false, triggerSettingsOpen=false, aimSettingsOpen=false, clickerSettingsOpen=false, spotifyFreeView=true;
+    private int cheatSection=0; // 0 AutoTotem, 1 TriggerBot, 2 Aim Assist, 3 AutoClicker
     private int spotifyView=0; // 0=tracks, 1=devices, 2=playlists
     private String query="";
     private TextFieldWidget search,spotifyClientId,spotifySearch,spotifyRedirect,spotifyFreeSearch;
@@ -106,7 +106,7 @@ public final class LexyScreen extends Screen {
         String needle=query.trim().toLowerCase(Locale.ROOT);
         ArrayList<LexyClient.Module> list=new ArrayList<>();
         for(LexyClient.Module m:LexyClient.MODULES){
-            if ("AutoTotem".equals(m.category()) || "TriggerBot".equals(m.category()) || "AimAssist".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
+            if ("AutoTotem".equals(m.category()) || "TriggerBot".equals(m.category()) || "AimAssist".equals(m.category()) || "AutoClicker".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
             // All Modules is a compact list of actual toggleable HUD indicators, not 80 fake switches.
             if(tab==0 && !HudRenderer.isRelevant(m))continue;
             if(tab>0&&tab<=4&&!m.category().equals(TABS[tab]))continue;
@@ -397,12 +397,13 @@ public final class LexyScreen extends Screen {
     private static final int TRIGGER_ROWS=14;
     private static final int AIM_ROWS=13;
     private static final int TOTEM_ROWS=15;
-    private int cheatTabX(int section){return rightX()+7+section*((rightW()-14)/3);}
-    private int cheatTabW(int section){return section==2 ? rightX()+rightW()-7-cheatTabX(section) : (rightW()-14)/3-4;}
+    private static final int CLICKER_ROWS=16;
+    private int cheatTabX(int section){return rightX()+7+section*((rightW()-14)/4);}
+    private int cheatTabW(int section){return section==3 ? rightX()+rightW()-7-cheatTabX(section) : (rightW()-14)/4-4;}
     private void renderCheats(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+66;
-        String[] items={"AUTOTOTEM","TRIGGERBOT","AIM ASSIST"};
-        for(int i=0;i<3;i++){
+        String[] items={"TOTEM","TRIGGER","AIM","CLICKER"};
+        for(int i=0;i<4;i++){
             int xx=cheatTabX(i),ww=cheatTabW(i);
             rounded(c,xx,top,ww,27,i==cheatSection?0xFF264F80:SURFACE);
             if(i==cheatSection)rect(c,xx+5,top+24,ww-10,2,accent());
@@ -410,7 +411,70 @@ public final class LexyScreen extends Screen {
         }
         if(cheatSection==0)renderAutoTotem(c,mx,my);
         else if(cheatSection==1)renderTriggerBot(c,mx,my);
-        else renderAimAssist(c,mx,my);
+        else if(cheatSection==2)renderAimAssist(c,mx,my);
+        else renderAutoClicker(c,mx,my);
+    }
+    private void renderAutoClicker(DrawContext c,int mx,int my){
+        int x=rightX(),w=rightW(),top=panelY+102;
+        rounded(c,x,top,w,71,0xFF162A43);rect(c,x,top,4,71,accent());
+        label(c,"AutoClicker | "+AutoClicker.status(),x+13,top+10,w-25,WHITE);
+        label(c,"Vanilla interactions · no GUI clicks · up to 18 tick/s",x+13,top+26,w-25,MUTED);
+        int bw=Math.max(60,(w-26)/2),by=top+42;
+        rounded(c,x+9,by,bw,24,LexyClient.enabled.getOrDefault("AutoClicker",false)?0xFF245A86:SURFACE);
+        label(c,LexyClient.enabled.getOrDefault("AutoClicker",false)?"ENABLED - TAP TO OFF":"DISABLED - TAP TO ON",x+17,by+8,bw-15,WHITE);
+        rounded(c,x+16+bw,by,w-bw-25,24,clickerSettingsOpen?0xFF2D638A:SURFACE);
+        label(c,clickerSettingsOpen?"HIDE SETTINGS":"CONFIGURE",x+24+bw,by+8,w-bw-40,WHITE);
+        if(!clickerSettingsOpen){
+            label(c,"Left/right modes, CPS range, hold/toggle and safe clicks.",x+9,top+95,w-18,MUTED);
+            label(c,"Off by default. Assign clicker keys in Keybinds.",x+9,top+114,w-18,MUTED);
+            return;
+        }
+        String[] names={"MOUSE BUTTONS","ACTIVATION MODE","MIN CPS","MAX CPS","TIMING VARIATION","LEFT REACH","ATTACK CHARGE","WEAPON ONLY","IGNORE TEAM","IGNORE INVISIBLE","SWING IN AIR","RIGHT CLICK BLOCKS","RIGHT CLICK ITEMS","REQUIRE SNEAK","PAUSE WHILE USING","PAUSE FOR TOTEM"};
+        String[] values={AutoClicker.buttons.name(),AutoClicker.activation.name().replace('_',' '),
+          AutoClicker.minCps+" CPS",AutoClicker.maxCps+" CPS",AutoClicker.jitterMs+" ms",
+          String.format(Locale.ROOT,"%.1f",AutoClicker.leftReachTenths/10f)+" m",
+          AutoClicker.attackChargePercent+"%", AutoClicker.requireWeapon?"YES":"NO",
+          AutoClicker.ignoreTeam?"YES":"NO", AutoClicker.ignoreInvisible?"YES":"NO",
+          AutoClicker.airSwings?"ON":"OFF", AutoClicker.rightClickBlocks?"ON":"OFF",
+          AutoClicker.rightClickItems?"ON":"OFF",AutoClicker.requireSneak?"YES":"NO",
+          AutoClicker.pauseWhileUsing?"YES":"NO",AutoClicker.pauseDuringTotem?"YES":"NO"};
+        int start=top+81,end=panelY+panelH-65;
+        int visible=Math.min(CLICKER_ROWS,Math.max(1,(end-start)/48));
+        scroll=Math.max(0,Math.min(scroll,Math.max(0,CLICKER_ROWS-visible)));
+        clip(c,x,start,x+w,end);
+        for(int i=scroll;i<Math.min(CLICKER_ROWS,scroll+visible);i++){
+            int y=start+(i-scroll)*48;
+            rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            label(c,names[i],x+19,y+16,w-145,WHITE);
+            rounded(c,x+w-113,y+8,98,25,SURFACE);label(c,values[i],x+w-104,y+16,86,WHITE);
+        }
+        c.disableScissor();
+        int y=panelY+panelH-60;
+        rounded(c,x+7,y,65,25,scroll>0?SURFACE:OUTLINE);label(c,"< UP",x+18,y+9,50,WHITE);
+        rounded(c,x+w-74,y,67,25,scroll<Math.max(0,CLICKER_ROWS-visible)?SURFACE:OUTLINE);
+        label(c,"DOWN >",x+w-67,y+9,57,WHITE);
+        label(c,"Settings "+(scroll+1)+"-"+Math.min(CLICKER_ROWS,scroll+visible)+" / "+CLICKER_ROWS,x+80,y+9,w-164,MUTED);
+    }
+    private static void stepClickerSetting(int i,int direction){
+        switch(i){
+            case 0 -> AutoClicker.buttons=AutoClicker.Buttons.values()[Math.floorMod(AutoClicker.buttons.ordinal()+direction,AutoClicker.Buttons.values().length)];
+            case 1 -> AutoClicker.activation=AutoClicker.Activation.values()[Math.floorMod(AutoClicker.activation.ordinal()+direction,AutoClicker.Activation.values().length)];
+            case 2 -> {AutoClicker.minCps=Math.floorMod(AutoClicker.minCps-1+direction,18)+1;AutoClicker.maxCps=Math.max(AutoClicker.minCps,AutoClicker.maxCps);}
+            case 3 -> AutoClicker.maxCps=Math.max(AutoClicker.minCps,Math.min(18,AutoClicker.maxCps+direction));
+            case 4 -> AutoClicker.jitterMs=Math.floorMod(AutoClicker.jitterMs+direction*10,110);
+            case 5 -> AutoClicker.leftReachTenths=AutoClicker.leftReachTenths+direction>30?20:AutoClicker.leftReachTenths+direction<20?30:AutoClicker.leftReachTenths+direction;
+            case 6 -> AutoClicker.attackChargePercent=Math.floorMod(AutoClicker.attackChargePercent+direction*5,105);
+            case 7 -> AutoClicker.requireWeapon=!AutoClicker.requireWeapon;
+            case 8 -> AutoClicker.ignoreTeam=!AutoClicker.ignoreTeam;
+            case 9 -> AutoClicker.ignoreInvisible=!AutoClicker.ignoreInvisible;
+            case 10 -> AutoClicker.airSwings=!AutoClicker.airSwings;
+            case 11 -> AutoClicker.rightClickBlocks=!AutoClicker.rightClickBlocks;
+            case 12 -> AutoClicker.rightClickItems=!AutoClicker.rightClickItems;
+            case 13 -> AutoClicker.requireSneak=!AutoClicker.requireSneak;
+            case 14 -> AutoClicker.pauseWhileUsing=!AutoClicker.pauseWhileUsing;
+            case 15 -> AutoClicker.pauseDuringTotem=!AutoClicker.pauseDuringTotem;
+        }
+        AutoClicker.reset();LexyClient.save();LexySounds.save();
     }
     private void renderAimAssist(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
@@ -567,6 +631,14 @@ public final class LexyScreen extends Screen {
     }
     @Override public boolean mouseClicked(double mx,double my,int button){
         mx=logical(mx);my=logical(my);
+        if(button==1 && !editor && tab==10 && cheatSection==3 && clickerSettingsOpen){
+            int x=rightX(),top=panelY+102,start=top+81,end=panelY+panelH-65;
+            int visible=Math.min(CLICKER_ROWS,Math.max(1,(end-start)/48));
+            for(int i=scroll;i<Math.min(CLICKER_ROWS,scroll+visible);i++)
+                if(inside(mx,my,x+7,start+(i-scroll)*48,rightW()-16,41)){
+                    stepClickerSetting(i,-1);return true;
+                }
+        }
         if(button!=0)return super.mouseClicked(mx,my,button);
         if(inside(mx,my,panelX,panelY,panelW,panelH))LexySounds.tap();
         if(inside(mx,my,rightX()+rightW()-44,panelY+18,35,27)){close();return true;}
@@ -731,10 +803,33 @@ public final class LexyScreen extends Screen {
             }
         }else if(tab==10){
             int switchY=panelY+66;
-            for(int tabIndex=0;tabIndex<3;tabIndex++){
+            for(int tabIndex=0;tabIndex<4;tabIndex++){
                 if(inside(mx,my,cheatTabX(tabIndex),switchY,cheatTabW(tabIndex),27)){
                     cheatSection=tabIndex;scroll=0;LexySounds.navigate();return true;
                 }
+            }
+            if(cheatSection==3){
+                int top=panelY+102,by=top+42,bw=Math.max(60,(rw-26)/2);
+                if(inside(mx,my,rx+9,by,bw,24)){
+                    boolean active=!LexyClient.enabled.getOrDefault("AutoClicker",false);
+                    LexyClient.enabled.put("AutoClicker",active);AutoClicker.reset();
+                    LexyClient.save();LexySounds.toggle();return true;
+                }
+                if(inside(mx,my,rx+16+bw,by,rw-bw-25,24)){
+                    clickerSettingsOpen=!clickerSettingsOpen;scroll=0;LexySounds.navigate();return true;
+                }
+                if(clickerSettingsOpen){
+                    int yy=top+81,end=panelY+panelH-65;
+                    int visible=Math.min(CLICKER_ROWS,Math.max(1,(end-yy)/48));
+                    int max=Math.max(0,CLICKER_ROWS-visible),navY=panelY+panelH-60;
+                    if(inside(mx,my,rx+7,navY,65,25)){scroll=Math.max(0,scroll-1);return true;}
+                    if(inside(mx,my,rx+rw-74,navY,67,25)){scroll=Math.min(max,scroll+1);return true;}
+                    for(int i=scroll;i<Math.min(CLICKER_ROWS,scroll+visible);i++)
+                        if(inside(mx,my,rx+7,yy+(i-scroll)*48,rw-16,41)){
+                            stepClickerSetting(i,1);return true;
+                        }
+                }
+                return true;
             }
             if(cheatSection==2){
                 int top=panelY+102,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
@@ -903,37 +998,3 @@ public final class LexyScreen extends Screen {
             LexyClient.positions.put(m.id(),(int)Math.max(0,Math.min(width-55,(mx-dragDX-rightX())/scale)));
             LexyClient.positions.put(m.id()+".y",(int)Math.max(0,Math.min(height-20,(my-dragDY-contentY())/scale)));
             return true;
-        }return super.mouseDragged(mx,my,button,dx,dy);
-    }
-    @Override public boolean mouseReleased(double mx,double my,int button){
-        mx=logical(mx);my=logical(my);
-        if(dragging){dragging=false;LexyClient.save();return true;}
-        return super.mouseReleased(mx,my,button);
-    }
-    @Override public boolean mouseScrolled(double mx,double my,double amount){
-        mx=logical(mx);my=logical(my);
-        if(inside(mx,my,panelX+7,panelY+65,sidebarW-8,panelH-117)){
-            navScroll=Math.max(0,Math.min(navLimit(),navScroll-(int)Math.signum(amount)*2));return true;
-        }
-        if(inside(mx,my,rightX(),contentY(),rightW(),contentH())||tab==6||tab==7||tab==8||tab==9||tab==10){
-            int max=0;
-            if(modular())max=maxScroll(filtered().size());
-            else if(tab==5||tab==6)max=Math.max(0,OptimizationManager.OPTIONS.size()-Math.max(1,(panelY+panelH-35-(panelY+115))/48));
-            else if(tab==7){
-                SpotifyController sp=SpotifyController.INSTANCE;
-                int count=spotifyView==1?sp.devices().size():spotifyView==2?sp.playlists().size():sp.tracks().size();
-                max=Math.max(0,count-Math.max(1,(panelY+panelH-30-(panelY+282))/(spotifyView==1?31:32)));
-            }
-            else if(tab==8)max=Math.max(0,LocalMusicPlayer.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+248))/31));
-            else if(tab==9)max=Math.max(0,19-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
-            else if(tab==10){
-                if(cheatSection==0)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
-                else if(cheatSection==1)max=triggerSettingsOpen?Math.max(0,TRIGGER_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
-                else max=aimSettingsOpen?Math.max(0,AIM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+183))/48)):0;
-            }
-            scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
-        }return super.mouseScrolled(mx,my,amount);
-    }
-    @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
-    @Override public boolean shouldPause(){return false;}
-}

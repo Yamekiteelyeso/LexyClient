@@ -1,4 +1,14 @@
-# LexyClient 2.6 — Slate Blue Combat Update
+# LexyClient 2.7.0 — AutoClicker & Combat Quality
+
+- Added client-tick AutoClicker with left/right/both and mouse/key/toggle activation.
+- Configurable CPS range, timing variance, attack charge, weapon/team/invisible filters, sneak, vanilla reach and air swings.
+- Optional right-block/right-item use; no inventory or GUI click injection.
+- Added toggle/hold keybinds, persisted settings, panic-disable support.
+- Prevent duplicate auto attacks by coordinating with TriggerBot and AutoTotem.
+- New four-way Cheats navigation and right-click reverse setting changes.
+- Retains Aim Assist, AutoTotem, Zoom, macros, Spotify, local MP3, optimized HUD.
+
+# LexyClient 2.7 — Slate Blue Combat Update
 
 ### New: Aim Assist (OFF by default)
 - Smooth yaw/pitch aiming at visible living entities, with a configurable cone and aim range.
