@@ -42,6 +42,8 @@ public final class LexyClient implements ClientModInitializer {
  public static int maxHudWidgets=7;
  public static int localMusicVolume=65; public static boolean localMusicLoop=false;
  public static final int[] ACCENTS = {0xFF3B82F6,0xFF60A5FA,0xFF2563EB,0xFF22D3EE,0xFF7489B8,0xFF467FB9};
+ public static final net.minecraft.util.Identifier ICON_ATLAS = new net.minecraft.util.Identifier("lexy-client", "textures/gui/icons.png");
+ private static boolean welcomeShown = false;
  public static int accent(){return ACCENTS[Math.floorMod(accentChoice,ACCENTS.length)];}
  public static int moduleCount(){return MODULES.size();}
  public static boolean hudMinimal = false;
@@ -58,7 +60,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();HudRenderer.invalidate();save();
  }
 
- private static final int CONFIG_VERSION = 281;
+ private static final int CONFIG_VERSION = 300;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -70,7 +72,7 @@ public final class LexyClient implements ClientModInitializer {
   hudSpacing = Math.min(hudSpacing, 19);
  }
 
- private static KeyBinding guiKey, hudKey, spotifyKey;
+ private static KeyBinding guiKey, fallbackGuiKey, hudKey, spotifyKey;
  private static long lastGuiToggleNanos;
  private static boolean menuShiftHeld;
  public static boolean allowMenuToggle(){
@@ -141,6 +143,11 @@ public final class LexyClient implements ClientModInitializer {
   add("HUD","Effect 4",()->effect(3),false);
   add("HUD","FPS",()->mc.getCurrentFps()+"",true);
   add("HUD","Ping",LexyClient::ping,true);
+  add("HUD","Biome",()->LexyTools.biome(mc),false);
+  add("HUD","Server",()->LexyTools.server(mc),false);
+  add("HUD","Time",()->mc.world==null?"-":String.valueOf(mc.world.getTimeOfDay()%24000),false);
+  add("HUD","Memory",()->{Runtime r=Runtime.getRuntime();return ((r.totalMemory()-r.freeMemory())/1048576L)+" MB";},false);
+  add("HUD","Free Slots",()->{if(p()==null)return "-";int free=0;for(int i=0;i<36;i++)if(p().getInventory().getStack(i).isEmpty())free++;return free+" / 36";},false);
   add("HUD","XYZ X",()->xyz(0),false);
   add("HUD","XYZ Y",()->xyz(1),false);
   add("HUD","XYZ Z",()->xyz(2),false);
@@ -198,27 +205,41 @@ public final class LexyClient implements ClientModInitializer {
 
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
- @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
+ @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();
+ System.out.println("[LexyClient 3.0.0] Client entrypoint invoked. Fabric loaded LexyClient.");
+ TitleBranding.register();LexyCommands.register();
+ try{LexySounds.init();}catch(Exception ex){System.err.println("[LexyClient] Audio registration unavailable: "+ex);}
+ sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"key.categories.lexyclient"));
+ fallbackGuiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.backup_menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_F8,"key.categories.lexyclient"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
  ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;
   // Screens consume key-release events; this covers the same release after closing a screen.
   if(client.currentScreen==null && client.getWindow()!=null &&
      !InputUtil.isKeyPressed(client.getWindow().getHandle(),GLFW.GLFW_KEY_RIGHT_SHIFT))menuShiftReleased();
-  while(guiKey.wasPressed()){
-  if(!allowMenuToggle())continue;
+  while(guiKey.wasPressed() || fallbackGuiKey.wasPressed()){
+  if(client.currentScreen==null && !allowMenuToggle())continue;
   if(client.currentScreen instanceof LexyScreen current)current.close();
   else if(client.currentScreen==null)client.setScreen(new LexyScreen(false));
- }while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+ }while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);LexyTools.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();welcomeShown=false;return;}
+ if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§bLEXY 3.0 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 3.0.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
  HudRenderCallback.EVENT.register((context,delta)->{
   if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen||mc.currentScreen instanceof HudEditorScreen)return;
   HudRenderer.render(context,false,null);
+  if(LexyTools.watermark){
+    int sw=mc.getWindow().getScaledWidth();int y=mc.getWindow().getScaledHeight()-26;
+    int x=Math.max(4,sw-168);
+    context.fill(x,y,sw-5,y+19,0xD90F1C2C);
+    context.fill(x,y,x+3,y+19,accent());
+    context.drawTextWithShadow(mc.textRenderer,"LEXY 3.0  |  RSHIFT / F8",x+10,y+6,0xFFC5E4FF);
+  }
  });
- net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);});
+ net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);LexyTools.shutdown(client);});
  }
  public static void save(){try{Files.createDirectories(CONFIG.getParent());JsonObject root=new JsonObject();JsonObject mods=new JsonObject();enabled.forEach(mods::addProperty);root.add("modules",mods);JsonObject coords=new JsonObject();positions.forEach(coords::addProperty);root.add("positions",coords);root.addProperty("configVersion",CONFIG_VERSION);
- JsonObject style=new JsonObject();style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
+ JsonObject style=new JsonObject();style.addProperty("watermark",LexyTools.watermark);style.addProperty("autoSprint",LexyTools.autoSprint);style.addProperty("fullbright",LexyTools.fullbright);
+ style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
  style.addProperty("accentChoice",accentChoice);
  style.addProperty("menuScalePercent",menuScalePercent);style.addProperty("hudScalePercent",hudScalePercent);
  style.addProperty("hudGridSize",hudGridSize);style.addProperty("hudGridSnap",hudGridSnap);style.addProperty("hudShowGrid",hudShowGrid);style.addProperty("hudBackground",hudBackground);
@@ -275,6 +296,9 @@ public final class LexyClient implements ClientModInitializer {
  }
  public static void load(){if(!Files.exists(CONFIG)){applyCompactDefaults();return;}try{JsonObject root=JsonParser.parseString(Files.readString(CONFIG)).getAsJsonObject();int configVersion=root.has("configVersion")?root.get("configVersion").getAsInt():0;if(root.has("modules"))for(var e:root.getAsJsonObject("modules").entrySet())if(enabled.containsKey(e.getKey()))enabled.put(e.getKey(),e.getValue().getAsBoolean());if(root.has("positions"))for(var e:root.getAsJsonObject("positions").entrySet())positions.put(e.getKey(),e.getValue().getAsInt());
  if(root.has("style")){JsonObject style=root.getAsJsonObject("style");
+ if(style.has("watermark"))LexyTools.watermark=style.get("watermark").getAsBoolean();
+ if(style.has("autoSprint"))LexyTools.autoSprint=style.get("autoSprint").getAsBoolean();
+ if(style.has("fullbright"))LexyTools.fullbright=style.get("fullbright").getAsBoolean();
  if(style.has("hudOpacity"))hudOpacity=Math.max(50,Math.min(245,style.get("hudOpacity").getAsInt()));
  if(style.has("hudSpacing"))hudSpacing=Math.max(16,Math.min(36,style.get("hudSpacing").getAsInt()));
  if(style.has("accentChoice"))accentChoice=style.get("accentChoice").getAsInt();

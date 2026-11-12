@@ -37,7 +37,7 @@ public final class HudRenderer {
             "FPS","Ping","Health","Absorption","Food","Totems","Golden Apples","Ender Pearls",
             "Mainhand Durability","Offhand Item","Speed","XYZ X","XYZ Y","XYZ Z","Facing",
             "Low Health Alert","Low Helmet Alert","Low Chest Alert","Low Legs Alert","Low Boots Alert",
-            "Totem Stock Warning","Effect 1","Effect 2","Effect 3","Effect 4");
+            "Totem Stock Warning","Biome","Server","Time","Memory","Free Slots","Effect 1","Effect 2","Effect 3","Effect 4");
     public static boolean isRelevant(LexyClient.Module module){
         return module.drawInHud() && GAME_HUD.contains(module.id()) &&
             (module.category().equals("HUD") || module.category().equals("Utilities"));

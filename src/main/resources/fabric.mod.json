@@ -3,7 +3,7 @@
   "id": "lexy-client",
   "version": "${version}",
   "name": "LexyClient",
-  "description": "LexyClient 2.8.1 UI hotfix: responsive redesigned client menu, right-shift toggle, HUD, combat utilities, keybinds, optimization, Spotify and original sounds.",
+  "description": "LexyClient 3.0 reliability release: clear loading feedback, /lexy fallback, RShift/F8, icon navigation, eight utility actions, graphics options, QoL and HUD.",
   "environment": "client",
   "entrypoints": {
     "client": [

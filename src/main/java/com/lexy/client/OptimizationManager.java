@@ -67,6 +67,14 @@ public final class OptimizationManager {
             d -> o().getMipmapLevels().setValue(clamp(o().getMipmapLevels().getValue()+d,0,4))),
         new Entry("Distortion FX", "Screen distortion intensity (visual comfort)", ()-> Math.round(o().getDistortionEffectScale().getValue()*100)+"%",
             d -> o().getDistortionEffectScale().setValue(clamp(o().getDistortionEffectScale().getValue()+d*0.25,0,1))),
+        new Entry("Brightness", "Vanilla gamma adjustment", ()->Math.round(o().getGamma().getValue()*100)+"%",
+            d->o().getGamma().setValue(clamp(o().getGamma().getValue()+d*0.1,0,1))),
+        new Entry("GUI Scale", "Adjust Minecraft GUI scale (may require refresh)", ()->String.valueOf(o().getGuiScale().getValue()),
+            d->o().getGuiScale().setValue(clamp(o().getGuiScale().getValue()+d,0,4))),
+        new Entry("Chat Opacity", "Adjust chat transparency", ()->Math.round(o().getChatOpacity().getValue()*100)+"%",
+            d->o().getChatOpacity().setValue(clamp(o().getChatOpacity().getValue()+d*0.1,0,1))),
+        new Entry("Chat Scale", "Chat text size", ()->Math.round(o().getChatScale().getValue()*100)+"%",
+            d->o().getChatScale().setValue(clamp(o().getChatScale().getValue()+d*0.1,0,1))),
         new Entry("FOV Effects", "Speed-change field-of-view intensity", ()-> Math.round(o().getFovEffectScale().getValue()*100)+"%",
             d -> o().getFovEffectScale().setValue(clamp(o().getFovEffectScale().getValue()+d*0.25,0,1)))
     );

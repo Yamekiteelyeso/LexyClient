@@ -1,8 +1,12 @@
-# LexyClient 2.8.1 — Correcciones de interfaz y estabilidad
+# 3.0.0 — Reliability / Icon UI / Quick Tools
 
-- El editor de Keybinds y Macros se ajusta a pantallas pequeñas y escalas de GUI altas; los botones ya no quedan fuera de la pantalla.
-- Coordenadas de clic, arrastre, mouse y widgets transformadas de manera coherente con el escalado.
-- Shift derecho se limita a una activación por pulsación, evitando el cierre o la apertura por repetición.
-- Guardado de configuración atómico para evitar truncar JSON si el juego se cierra durante un guardado.
-- Mantiene los módulos existentes: AutoTotem, TriggerBot, Aim Assist, AutoClicker, Zoom y Spotify.
-- Compilación de Fabric no equivale a prueba dentro de Minecraft; si falla sigue siendo necesario latest.log/crash-report.
+- New live mod visibility indicators, exact version logging and backup key F8.
+- Client commands `/lexy`, `/lexy open`, `/lexy status`, `/lexy coords`, `/lexy resetui`, `/lexy sprint`, `/lexy bright`, `/lexy watermark`.
+- Stronger Title and Pause entrypoints, including Right Shift screen handler.
+- Original icon sprite atlas for all twelve tabs, with responsive graphite-blue UI.
+- Eight practical Utility actions that run Minecraft/client functions.
+- Reversible fullbright, opt-in auto-sprint, watermark toggle and HUD reset.
+- Extra useful HUD metrics and four video settings based on real Minecraft options.
+- Preserves all previous client modules, keybindings, Spotify and local player.
+
+No claim of real gameplay testing until run inside Minecraft. To diagnose a missing mod, use Minecraft logs.

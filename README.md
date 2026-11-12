@@ -1,29 +1,25 @@
-# LexyClient 2.8.1 — Blue Slate Interface
+# LexyClient 3.0.0 — Visible, usable, verifiable
 
-A Fabric **1.20.1** Minecraft client mod for PC and PojavLauncher (Java 17).
+Fabric client-only mod for Minecraft **1.20.1**, Java 17, Fabric API.
 
-## Redesigned interface
+## When the mod appears to do nothing
+1. Check **Mods** (if Mod Menu is installed). Look for `LexyClient`, version 3.0.0. Mod Menu is optional.
+2. On the title screen find **LEXY 3.0 OPEN MENU**; it also appears on Pause (ESC).
+3. Press **Right Shift** or **F8**. Both are registered key bindings. On Title/Pause the screen keyboard handler also opens the GUI.
+4. In-game, type **`/lexy`** (client-side, works even when the server has no Lexy plugin).
+5. Type **`/lexy status`**. If unknown, Fabric did not load LexyClient: check launcher profile, game version, `mods` folder and Fabric API.
+6. In `%APPDATA%\.minecraft\logs\latest.log`, search `[LexyClient 3.0.0]`. For crashes, send the log.
 
-- Unified graphite/navy/blue theme with a new two-pane workspace, compact status rail, smoother hover feedback, active module cards, clearly defined action buttons and genuine clickable controls.
-- A new keybind/macro screen uses the same visual language as the main GUI. The HUD editor and title branding have also been refreshed.
-- Sidebar sections remain scrollable via mouse wheel and dedicated touchscreen-friendly buttons. Scrollable content is clipped to its own pane.
-- Dashboard values are cached briefly to avoid recalculating every single data source on each frame. The cache lasts at most ~220 ms and does not affect gameplay automation.
-- Module and combat configurations are kept, including AutoTotem, TriggerBot, Aim Assist, AutoClicker, zoom, macros, Spotify and local music.
+## New practical features
+- Hand-drawn icon sprite atlas for the 12-section graphite-and-blue UI.
+- Utility tools: copy XYZ, auto sprint, reversible fullbright, loaded watermark, HUD editor, max FPS profile, reset UI, save settings.
+- `/lexy coords`, `/lexy status`, `/lexy resetui`, `/lexy sprint`, `/lexy bright`, `/lexy watermark`.
+- In-world visual indicator and action bar so you can verify the mod is really active.
+- 5 more useful HUD metrics: biome, server, day time, Java memory, empty inventory slots.
+- 4 additional real video options: brightness, GUI scale, chat opacity and chat scale.
+- Existing AutoTotem, TriggerBot, Aim Assist, AutoClicker, Zoom, macros, Spotify Connect, local MP3 playback and optimization retained.
 
-## Keyboard shortcuts
-
-- **Right Shift**: open *and* close the main LexyClient menu. This is intentionally independent of Left Shift (the in-game sneak key).
-- **Escape**: close the current menu; in the key editor or HUD editor, return to the parent menu.
-- **Ctrl+F**: focus dashboard module search while in a modules category.
-- **Right Ctrl**: HUD editor shortcut while in-game.
-- Keybinds and macros remain editable in `Keybinds` and in Minecraft's own Controls where applicable.
-
-## Installation
-
-Install Minecraft 1.20.1, Fabric Loader, Fabric API and Java 17. Use the remapped `lexy-client-2.8.1.jar` from `build/libs` or GitHub Actions, in `mods`. **Remove earlier LexyClient JARs** to avoid conflicting mod IDs.
+All options are real UI controls, not fake modules. Server protections and Spotify account restrictions still apply.
 
 ## Build
-
-Requires JDK 17 and Gradle 8.11.1: `gradle build`. Continuous integration compiles and publishes the JAR artifact in GitHub Actions.
-
-Combat automation may violate multiplayer server rules. Build verification is not the same as an in-game device test. Spotify's streaming and playback APIs still respect account and platform restrictions; Free mode opens the official Spotify app and local audio plays your own files inside Minecraft.
+GitHub Actions builds `gradle build` on Java 17 with Fabric 1.20.1 mappings. The build proves Java compatibility and bundling, **not actual gameplay/runtime**. Install only the remapped `.jar` alongside Fabric API, removing older LexyClient jars.

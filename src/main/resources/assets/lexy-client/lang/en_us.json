@@ -9,5 +9,7 @@
   "key.lexyclient.macro3": "Macro 3",
   "key.lexyclient.macro4": "Macro 4",
   "key.lexyclient.autoclicker": "AutoClicker Toggle",
-  "key.lexyclient.hold_autoclicker": "AutoClicker Hold"
+  "key.lexyclient.hold_autoclicker": "AutoClicker Hold",
+  "key.lexyclient.menu": "LexyClient menu (Right Shift)",
+  "key.lexyclient.backup_menu": "LexyClient backup menu (F8)"
 }

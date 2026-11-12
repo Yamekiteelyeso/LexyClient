@@ -1,23 +1,15 @@
-# LexyClient 2.8.1 — Interfaz renovada
+# LexyClient 3.0.0 — instalación y diagnóstico
 
-## Cambios de esta versión
+**Requisitos:** Minecraft Java 1.20.1, Fabric Loader, Fabric API, Java 17. No instales este JAR en Forge, NeoForge, Bedrock ni como plugin de servidor.
 
-La GUI se ha reorganizado con una barra lateral para las 12 secciones, botones de acción más consistentes, tarjetas para los módulos, estados visibles de activación y una paleta azul/gris grafito. La pantalla de teclas/macros, el editor del HUD y la presentación del menú también recibieron el mismo estilo.
+1. Cierra Minecraft. Elimina todas las versiones anteriores de LexyClient de `mods`.
+2. Coloca **lexy-client-3.0.0.jar** en la carpeta `mods` del perfil de Minecraft que usas.
+3. Abre el perfil **Fabric 1.20.1**. En el menú de título se debe mostrar **LEXY 3.0 OPEN MENU**.
+4. Pulsa **Shift derecho** o **F8**. También puedes abrir desde Pausa (ESC).
+5. Entra a un mundo y escribe **`/lexy`** o **`/lexy status`**. El comando es del cliente, no requiere permisos en un servidor.
+6. Si un ajuste de escala oculta el menú: **`/lexy resetui`**. Puedes usar `/lexy coords`, `/lexy sprint`, `/lexy bright` y `/lexy watermark`.
+7. Si Minecraft no muestra absolutamente nada, adjunta `%APPDATA%\.minecraft\logs\latest.log` y la pantalla del perfil del lanzador.
 
-**Shift derecho abre y cierra LexyClient.** Ya no necesitas Shift izquierdo para cerrar. `ESC` sigue sirviendo para cerrar el menú; en submenús retrocede a la pantalla anterior. En las categorías de módulos, `Ctrl+F` enfoca la búsqueda.
+**Lo nuevo:** nueva barra de navegación con iconos reales, ocho accesos útiles, marca de carga visible, HUD con métricas extra, opciones de FPS/chat/brillo/escala, acceso de emergencia F8 y comandos de diagnóstico.
 
-La interfaz mantiene los controles táctiles de navegación para PojavLauncher, y las opciones del cliente se conservan al actualizar. Las lecturas del dashboard se agrupan temporalmente para reducir el trabajo gráfico durante la renderización.
-
-## Instalación
-
-1. Utiliza Minecraft 1.20.1 con Fabric Loader y Fabric API.
-2. Asegúrate de usar Java 17.
-3. Elimina cualquier JAR anterior de LexyClient de `mods`.
-4. Copia `LexyClient-2.8.1.jar` en `mods`.
-5. Inicia Minecraft y presiona **Shift derecho** para abrir/cerrar el menú. En Pojav también puedes utilizar el botón del menú de pausa.
-
-## Funciones existentes
-
-Conserva AutoTotem, TriggerBot, Aim Assist, AutoClicker, Zoom, controles y macros, módulos HUD, optimización adaptativa, Spotify Connect/Free y reproductor local MP3/WAV/AIFF. No se modificaron las restricciones de Spotify ni se incluye un sistema que transmita música protegida sin autorización.
-
-**Pruebas:** la compilación de Java/Fabric debe aprobarse antes de entregar el JAR. La compatibilidad completa con servidores y teléfonos reales requiere pruebas dentro del juego.
+La compilación automática verifica el bytecode Java y los recursos. No sustituye una prueba manual real con Minecraft ni demuestra el origen de un fallo en tu PC.

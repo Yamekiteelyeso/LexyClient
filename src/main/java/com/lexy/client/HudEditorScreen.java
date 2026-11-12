@@ -109,7 +109,7 @@ public final class HudEditorScreen extends Screen {
     }
 
     @Override public boolean keyPressed(int keyCode,int scanCode,int modifiers){
-        if(keyCode==GLFW.GLFW_KEY_RIGHT_SHIFT){
+        if(keyCode==GLFW.GLFW_KEY_RIGHT_SHIFT||keyCode==GLFW.GLFW_KEY_F8){
             if(LexyClient.allowMenuToggle()){
                 LexyClient.save();
                 if(parent instanceof LexyScreen menu)menu.close();
@@ -122,7 +122,7 @@ public final class HudEditorScreen extends Screen {
     }
 
     @Override public boolean keyReleased(int keyCode,int scanCode,int modifiers){
-        if(keyCode==GLFW.GLFW_KEY_RIGHT_SHIFT)LexyClient.menuShiftReleased();
+        if(keyCode==GLFW.GLFW_KEY_RIGHT_SHIFT||keyCode==GLFW.GLFW_KEY_F8)LexyClient.menuShiftReleased();
         return super.keyReleased(keyCode,scanCode,modifiers);
     }
     @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
