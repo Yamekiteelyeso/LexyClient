@@ -10,14 +10,15 @@ import java.util.*;
 public final class LexyTheme {
     private LexyTheme() {}
     public record Palette(String name, int accent, int accentSoft, int background, int sidebar, int card, int border) {}
+    // Seven neutral finishes: no saturated UI colors, even on migrated profiles.
     private static final Palette[] PALETTES = {
-        new Palette("Dark Blue",0xFF4A95F5,0xFF1F4066,0xFF0A111D,0xFF0E1928,0xFF172439,0xFF2A3C53),
-        new Palette("Midnight",0xFF6095CF,0xFF27405F,0xFF090D18,0xFF101725,0xFF1B2535,0xFF354254),
-        new Palette("AMOLED",0xFF65B6FF,0xFF16364B,0xFF030507,0xFF090D12,0xFF141B24,0xFF29313B),
-        new Palette("Lunar Inspired",0xFF5AABC8,0xFF255B69,0xFF0C161B,0xFF152221,0xFF20302D,0xFF35534F),
-        new Palette("Feather Inspired",0xFFE0525E,0xFF59303D,0xFF101115,0xFF161920,0xFF252A32,0xFF454A53),
-        new Palette("Purple Neon",0xFFAE82F8,0xFF483269,0xFF100D1B,0xFF1A152B,0xFF29223B,0xFF4A3B65),
-        new Palette("Custom Blue",0xFF55D3E5,0xFF225466,0xFF091822,0xFF102530,0xFF1C3542,0xFF31556B)
+        new Palette("Obsidian", 0xFFE0E0E0,0xFF282828,0xFF080808,0xFF0F0F0F,0xFF191919,0xFF363636),
+        new Palette("Graphite", 0xFFCDCDCD,0xFF323232,0xFF101010,0xFF181818,0xFF242424,0xFF414141),
+        new Palette("Carbon",   0xFFB7B7B7,0xFF292929,0xFF0C0C0C,0xFF131313,0xFF1D1D1D,0xFF343434),
+        new Palette("Onyx",     0xFFF0F0F0,0xFF242424,0xFF050505,0xFF0B0B0B,0xFF151515,0xFF303030),
+        new Palette("Stone",    0xFFD0D0D0,0xFF383838,0xFF141414,0xFF202020,0xFF292929,0xFF494949),
+        new Palette("Ash",      0xFFBCBCBC,0xFF303030,0xFF0D0D0D,0xFF171717,0xFF222222,0xFF404040),
+        new Palette("Titanium", 0xFFE3E3E3,0xFF333333,0xFF101010,0xFF1C1C1C,0xFF292929,0xFF4B4B4B)
     };
     private static final Path ROOT=FabricLoader.getInstance().getConfigDir();
     private static final Path PREFS=ROOT.resolve("lexy-ui-v4.json");

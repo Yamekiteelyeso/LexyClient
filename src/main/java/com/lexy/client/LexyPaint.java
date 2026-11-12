@@ -6,8 +6,8 @@ import net.minecraft.client.gui.DrawContext;
 /** Small reusable, allocation-light drawing primitives. The only icon resource is one 8x4 atlas. */
 public final class LexyPaint {
     private LexyPaint() {}
-    public static final int WHITE=0xFFF3F7FF, MUTED=0xFF9AAAC1, DIM=0xFF708198,
-            GREEN=0xFF50DDAA, RED=0xFFF16F87;
+    public static final int WHITE=0xFFF7F7F7, MUTED=0xFFA8A8A8, DIM=0xFF7F7F7F,
+            GREEN=0xFFBBBBBB, RED=0xFF8C8C8C;
     public static void rect(DrawContext c,int x,int y,int w,int h,int color){
         if(w>0&&h>0)c.fill(x,y,x+w,y+h,color);
     }
@@ -56,8 +56,8 @@ public final class LexyPaint {
     }
     public static void button(DrawContext c,String name,int x,int y,int w,int h,
                               int back,int outline,int textColor,boolean hover){
-        rounded(c,x,y,w,h,hover?mix(back,0xFF395575,.28):back);
-        border(c,x,y,w,h,hover?mix(outline,0xFF9ABCEB,.55):outline);
+        rounded(c,x,y,w,h,hover?mix(back,0xFF515151,.28):back);
+        border(c,x,y,w,h,hover?mix(outline,0xFFB8B8B8,.55):outline);
         var tr=MinecraftClient.getInstance().textRenderer;
         label(c,name,x+Math.max(8,(w-tr.getWidth(name))/2),y+(h-8)/2,Math.max(12,w-14),textColor);
     }

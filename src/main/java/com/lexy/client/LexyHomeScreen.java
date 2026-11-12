@@ -24,15 +24,15 @@ public final class LexyHomeScreen extends Screen {
         buttonH=Math.max(24,Math.min(38,height/17));gap=Math.max(5,Math.min(9,buttonH/5));
         visible=Math.max(1,(height-firstY-42)/(buttonH+gap));
         scroll=Math.max(0,Math.min(scroll,ITEMS.length-visible));
-        System.out.println("[LexyClient 4.1.0] Studio title screen initialized "+width+"x"+height);
+        System.out.println("[LexyClient 4.2.0] Mono title screen initialized "+width+"x"+height);
     }
     private int buttonY(int index){return firstY+(index-scroll)*(buttonH+gap);}
     private void button(DrawContext c,int index,int mx,int my){
         var p=LexyTheme.palette();
         int y=buttonY(index),x=panelX,w=panelW;
         boolean hovered=LexyPaint.hit(mx,my,x,y,w,buttonH);
-        int color=index==0?p.accentSoft():index==7?0xFF33212A:0xC9141F2D;
-        int edge=index==0?p.accent():hovered?p.accent():0xFF3A4A5A;
+        int color=index==0?p.accentSoft():index==7?0xFF252525:0xC91E1E1E;
+        int edge=index==0?p.accent():hovered?p.accent():0xFF484848;
         LexyPaint.rounded(c,x,y,w,buttonH,hovered?LexyPaint.mix(color,p.accentSoft(),.46):color);
         LexyPaint.border(c,x,y,w,buttonH,edge);
         LexyPaint.icon(c,ICONS[index],x+15,y+(buttonH-19)/2,19);
@@ -42,23 +42,23 @@ public final class LexyHomeScreen extends Screen {
     @Override public void render(DrawContext c,int mx,int my,float delta){
         var p=LexyTheme.palette();
         c.drawTexture(BACKDROP,0,0,width,height,0,0,1600,900,1600,900);
-        c.fillGradient(0,0,width,height,0x28040810,0x8F020910);
+        c.fillGradient(0,0,width,height,0x28080808,0x8F080808);
         // Anchored top header: logo + non-decorative shortcuts.
-        LexyPaint.rounded(c,12,10,40,40,0xA80C1521);
+        LexyPaint.rounded(c,12,10,40,40,0xA8141414);
         c.drawTexture(LexyClient.LOGO,16,14,32,32,0,0,256,256,256,256);
         if(width>310){
             LexyPaint.title(c,"LEXY",59,17,1.5f,LexyPaint.WHITE);
-            LexyPaint.label(c,"STUDIO EDITION",59,34,142,p.accent());
+            LexyPaint.label(c,"MONO EDITION",59,34,142,p.accent());
         }
         if(width>=590){
             String[] nav={"MODULES","SETTINGS","VANILLA"};
             for(int i=0;i<nav.length;i++){
                 int x=width-297+i*97;
-                LexyPaint.button(c,nav[i],x,16,91,27,0xC51C2636,p.border(),LexyPaint.WHITE,
+                LexyPaint.button(c,nav[i],x,16,91,27,0xC5252525,p.border(),LexyPaint.WHITE,
                         LexyPaint.hit(mx,my,x,16,91,27));
             }
         }else{
-            LexyPaint.button(c,"VANILLA",width-92,16,80,25,0xC51C2636,p.border(),LexyPaint.MUTED,
+            LexyPaint.button(c,"VANILLA",width-92,16,80,25,0xC5252525,p.border(),LexyPaint.MUTED,
                     LexyPaint.hit(mx,my,width-92,16,80,25));
         }
         // Centered identity. This isn't a fake full-page panorama shader.
@@ -67,10 +67,10 @@ public final class LexyHomeScreen extends Screen {
         c.drawTexture(LexyClient.LOGO,logoX,logoY,logoSize,logoSize,0,0,256,256,256,256);
         if(height>=330){
             LexyPaint.title(c,"LEXY CLIENT",width/2-77,panelY+61,1.55f,LexyPaint.WHITE);
-            LexyPaint.label(c,"MADE FOR YOUR GAME",width/2-61,panelY+82,140,p.accent());
+            LexyPaint.label(c,"A CLEANER WAY TO PLAY",width/2-61,panelY+82,140,p.accent());
         }else{
             LexyPaint.title(c,"LEXY",logoX+logoSize+6,panelY+10,1.45f,LexyPaint.WHITE);
-            LexyPaint.label(c,"STUDIO 4.1",logoX+logoSize+6,panelY+28,110,p.accent());
+            LexyPaint.label(c,"MONO 4.2",logoX+logoSize+6,panelY+28,110,p.accent());
         }
         int bottom=Math.max(firstY+buttonH,height-35);
         c.enableScissor(panelX-3,firstY-3,panelX+panelW+3,bottom);
@@ -80,12 +80,12 @@ public final class LexyHomeScreen extends Screen {
         c.disableScissor();
         if(ITEMS.length>visible){
             int ax=panelX+panelW-19,top=firstY-20;
-            LexyPaint.button(c,"^",ax,top,19,17,0xD5142535,p.border(),LexyPaint.WHITE,
+            LexyPaint.button(c,"^",ax,top,19,17,0xD5232323,p.border(),LexyPaint.WHITE,
                     LexyPaint.hit(mx,my,ax,top,19,17));
-            LexyPaint.button(c,"v",ax,bottom+2,19,17,0xD5142535,p.border(),LexyPaint.WHITE,
+            LexyPaint.button(c,"v",ax,bottom+2,19,17,0xD5232323,p.border(),LexyPaint.WHITE,
                     LexyPaint.hit(mx,my,ax,bottom+2,19,17));
         }
-        LexyPaint.label(c,"LEXY 4.1  /  FABRIC 1.20.1",15,height-16,200,LexyPaint.MUTED);
+        LexyPaint.label(c,"LEXY 4.2  /  FABRIC 1.20.1",15,height-16,200,LexyPaint.MUTED);
         String right="RSHIFT / F8  -  MODULES";
         LexyPaint.label(c,right,Math.max(10,width-textRenderer.getWidth(right)-15),height-16,200,p.accent());
         super.render(c,mx,my,delta);

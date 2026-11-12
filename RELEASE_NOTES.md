@@ -1,25 +1,11 @@
-# LexyClient 4.1 — Studio UI Rework
+# LexyClient 4.2.0 — Monochrome HUD Edition
 
-This release addresses visual quality and navigation rather than claiming a complete new cheat engine.
+- Black, graphite, grey and white UI; all seven existing palettes now use neutral shades.
+- Smaller HUD with measured text widths (no artificial minimum of 60 pixels), grey two-tone text and no colored side bar or traffic-light effects.
+- Three actual HUD styles: flat, thin outline, text-only. Background, opacity and scale configurable and saved.
+- Compact HUD editor: drag, mouse + keyboard nudges, smaller toolbar, three presets and reset.
+- Migration of previous 4.1 HUD sizes while retaining enabled modules and widget locations.
+- Monochrome texture assets and smaller menu cards, with legible navigation on compact screens.
+- No changes to combat mechanics, authentication or Spotify playback restrictions.
 
-## Actually implemented
-
-- New original, dark slate interface with a consistent type hierarchy, 32 hand-drawn vector icons, centered module illustrations, and clear enabled/disabled/open states.
-- Settings appear in a right-side drawer; the catalog stays visible behind them. Escape closes the drawer before leaving the menu.
-- Real category navigation, favorites, search, activation controls, contextual module configuration, keyboard shortcuts and scrolling.
-- Redesigned title screen with an original Minecraft-inspired backdrop and direct actions for singleplayer, multiplayer, Realms (or vanilla fallback), Lexy modules, profiles, options and exit.
-- Seven persisted theme palettes; saved profiles can now be deleted using a two-click confirmation and existing profiles still load as before.
-- Fixed dashboard shortcut hitboxes and skipped clicks on catalog cards outside the clipped viewport.
-- Performance: cache filtered module lists, settings arrays, and the profiles list rather than rebuilding during every render frame. Icons are packed into one atlas.
-- Compact-screen support with collapsed side rail and touch-friendly paging; vanilla title can always be recovered.
-- Dashboard now includes live FPS, ping, memory, enabled modules and elapsed session minutes.
-- Added a one-step Restore Graphics action that reverses the last graphics preset applied during this session. It honestly reports when no prior preset is available.
-- All existing combat, music, HUD, zoom, macros and performance features remain in the project.
-
-## Limits / tests
-
-- Fabric Gradle compilation and an actual Minecraft client-entrypoint smoke test run through GitHub Actions. These are not equivalents of verifying every mouse/touch interaction.
-- The legacy advanced configuration screen remains accessible from relevant modules. It has not been fully redesigned.
-- The render backdrop is a precomputed texture; no expensive post-processing blur/shaders are added.
-- No claimed FPS percentage. Existing module behavior on multiplayer servers is not guaranteed or bypassing server validation.
-- Compatible with Minecraft Java 1.20.1 + Fabric API. Load the correct `mods` folder for the selected launcher/profile.
+The build and headless Fabric startup checks do not replace testing clicks inside a real game/launcher.

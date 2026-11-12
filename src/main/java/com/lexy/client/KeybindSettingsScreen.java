@@ -8,8 +8,8 @@ import org.lwjgl.glfw.GLFW;
 
 /** Native, game-scaled keybind and macro settings. Every visible button is actionable. */
 public final class KeybindSettingsScreen extends Screen {
-    private static final int BACKGROUND=0xFF0B1421, PANEL=0xFF152337, SURFACE=0xFF23384E;
-    private static final int BORDER=0xFF3A5470, TEXT=0xFFF0F7FF, MUTED=0xFF95AFC8;
+    private static final int BACKGROUND=0xFF131313, PANEL=0xFF212121, SURFACE=0xFF353535;
+    private static final int BORDER=0xFF505050, TEXT=0xFFF6F6F6, MUTED=0xFFABABAB;
     private final Screen parent;
     private int page=0,group=0,waiting=-1;
     private final TextFieldWidget[] macros=new TextFieldWidget[4];
@@ -32,7 +32,7 @@ public final class KeybindSettingsScreen extends Screen {
     }
     private void control(DrawContext c,String name,int x,int y,int w,int h,int mx,int my,boolean selected){
         boolean hover=inside(mx,my,x,y,w,h);
-        fill(c,x,y,w,h,selected?0xFF214E78:(hover?0xFF2A435E:SURFACE));
+        fill(c,x,y,w,h,selected?0xFF474747:(hover?0xFF404040:SURFACE));
         frame(c,x,y,w,h,selected?LexyClient.accent():BORDER);
         label(c,name,x+10,y+(h-9)/2,w-20,TEXT);
     }
@@ -57,13 +57,13 @@ public final class KeybindSettingsScreen extends Screen {
     }
     @Override public void render(DrawContext c,int mx,int my,float dt){
         renderBackground(c);
-        c.fillGradient(0,0,width,height,0xEE050D18,0xEF102035);
+        c.fillGradient(0,0,width,height,0xEE0C0C0C,0xEF1E1E1E);
         c.getMatrices().push();
         c.getMatrices().scale(viewScale,viewScale,1);
         fill(c,left-7,top-7,panelWidth+14,352,0x80000000);
         fill(c,left-2,top-2,panelWidth+4,342,BORDER);
         fill(c,left,top,panelWidth,338,BACKGROUND);
-        c.fillGradient(left+2,top+2,left+panelWidth-2,top+338,0xFF17283B,0xFF0C1523);
+        c.fillGradient(left+2,top+2,left+panelWidth-2,top+338,0xFF262626,0xFF141414);
         fill(c,left,top,Math.min(184,panelWidth/3),3,LexyClient.accent());
         label(c,"LEXY CLIENT    /    CONTROL CENTER",left+17,top+16,panelWidth-34,TEXT);
         label(c,"Assign keys, manage macros and keep your settings synchronized",left+17,top+33,panelWidth-34,MUTED);
@@ -83,7 +83,7 @@ public final class KeybindSettingsScreen extends Screen {
             control(c,"NEXT >",left+panelWidth-121,top+271,109,26,mx,my,false);
             label(c,"GROUP "+(group+1)+" / "+totalGroups(),left+panelWidth/2-38,top+280,78,MUTED);
             if(waiting>=0){
-                fill(c,left+28,top+207,panelWidth-56,42,0xFF0C304E);
+                fill(c,left+28,top+207,panelWidth-56,42,0xFF2B2B2B);
                 frame(c,left+28,top+207,panelWidth-56,42,LexyClient.accent());
                 label(c,"PRESS A KEY  |  BACKSPACE = CLEAR  |  ESC = CANCEL",
                         left+41,top+223,panelWidth-82,TEXT);
@@ -93,12 +93,12 @@ public final class KeybindSettingsScreen extends Screen {
                 int y=top+100+i*42;
                 fill(c,left+12,y-3,panelWidth-24,32,PANEL);
                 fill(c,left+12,y+5,3,17,LexyClient.accent());
-                label(c,"MACRO "+(i+1),left+24,y+9,92,0xFFB8D6F3);
+                label(c,"MACRO "+(i+1),left+24,y+9,92,0xFFD2D2D2);
             }
             label(c,"One command or chat message per key  /  Example: /home",left+17,top+281,panelWidth-35,MUTED);
         }
         fill(c,left+12,top+308,panelWidth-24,1,BORDER);
-        label(c,"RSHIFT: CLOSE MENU   ·   ESC: BACK",left+17,top+318,panelWidth-166,0xFF85A1BC);
+        label(c,"RSHIFT: CLOSE MENU   ·   ESC: BACK",left+17,top+318,panelWidth-166,0xFF9D9D9D);
         control(c,"SAVE / BACK",left+panelWidth-150,top+309,136,26,mx,my,false);
         super.render(c,(int)logical(mx),(int)logical(my),dt);
         c.getMatrices().pop();

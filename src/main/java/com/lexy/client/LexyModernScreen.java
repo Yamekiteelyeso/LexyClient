@@ -11,7 +11,7 @@ import java.util.*;
 public final class LexyModernScreen extends Screen {
     private static final String[] CATS={"Dashboard","Combat","Movement","Player","Render","HUD","Optimization","Utilities","Music","Cosmetics","Profiles","Settings"};
     private static final String[] HINTS={"At a glance","Automatic combat options","Movement and keys","Inventory and safety","Camera and visuals","On-screen widgets","Vanilla video options","Convenient tools","Local audio and Spotify","Cosmetic preferences","Save and load setups","Appearance and usability"};
-    private static final int GAP=10, NAV_ROW=31;
+    private static final int GAP=8, NAV_ROW=29;
     private final Screen parent;
     private String category="Dashboard",drawer=null,filter="ALL",toast="",pendingDelete="";
     private long toastUntil,deleteUntil,openedAt;
@@ -65,13 +65,13 @@ public final class LexyModernScreen extends Screen {
     }
     @Override protected void init(){
         openedAt=System.nanoTime();
-        pw=Math.min(1120,Math.max(120,width-14));ph=Math.min(680,Math.max(115,height-12));
+        pw=Math.min(960,Math.max(120,width-14));ph=Math.min(590,Math.max(115,height-12));
         px=(width-pw)/2;py=(height-ph)/2;
-        sidebar=pw>=730?166:pw>=480?132:45;
+        sidebar=pw>=730?155:pw>=480?122:45;
         cx=px+sidebar+GAP;cw=Math.max(75,pw-sidebar-GAP*2);
         viewTop=py+(ph<230?76:small()?98:119);viewBottom=py+ph-(ph<230?18:30);
-        cols=cw>=760?3:cw>=365?2:1;
-        cardH=bodyHeight()<95?Math.max(50,bodyHeight()-4):bodyHeight()>290?136:bodyHeight()>170?112:94;
+        cols=cw>=530?3:cw>=290?2:1;
+        cardH=bodyHeight()<95?Math.max(50,bodyHeight()-4):bodyHeight()>250?106:bodyHeight()>160?93:78;
         cardStep=cardH+GAP;cardW=Math.max(67,(cw-(cols-1)*GAP)/cols);
         int textWidth=Math.max(53,Math.min(260,cw-162));
         search=new TextFieldWidget(textRenderer,cx+5,py+(small()?73:94),textWidth,19,Text.literal("Search Lexy modules"));
@@ -84,8 +84,8 @@ public final class LexyModernScreen extends Screen {
     }
     private void background(DrawContext c){
         var p=LexyTheme.palette();
-        if(LexyTheme.dimBackground)c.fillGradient(0,0,width,height,0xDF030710,0xE707101B);
-        else c.fillGradient(0,0,width,height,0xB808101B,0xB30C1420);
+        if(LexyTheme.dimBackground)c.fillGradient(0,0,width,height,0xDF070707,0xE70F0F0F);
+        else c.fillGradient(0,0,width,height,0xB80F0F0F,0xB3131313);
         LexyPaint.rounded(c,px-5,py-4,pw+10,ph+11,0x60000000);
         LexyPaint.rounded(c,px,py,pw,ph,p.background());
         LexyPaint.border(c,px,py,pw,ph,p.border());
@@ -101,13 +101,13 @@ public final class LexyModernScreen extends Screen {
         LexyPaint.iconTile(c,0,px+12,py+10,29,p.accentSoft());
         if(!iconOnly()){
             LexyPaint.title(c,"LEXY",px+49,py+13,1.5f,LexyPaint.WHITE);
-            LexyPaint.label(c,"STUDIO  /  4.1",px+49,py+31,130,p.accent());
+            LexyPaint.label(c,"CLIENT  /  4.2",px+49,py+31,130,p.accent());
         }
         if(pw>580){
             String profile=LexyTheme.activeProfile.equals("Default")?"DEFAULT PROFILE":LexyTheme.activeProfile.toUpperCase(Locale.ROOT);
             LexyPaint.label(c,"●  "+profile,px+pw/2-50,py+23,Math.max(80,pw/3),LexyPaint.MUTED);
         }
-        LexyPaint.button(c,"X",px+pw-37,py+11,26,26,0xFF242C39,p.border(),LexyPaint.WHITE,
+        LexyPaint.button(c,"X",px+pw-37,py+11,26,26,0xFF2B2B2B,p.border(),LexyPaint.WHITE,
                 LexyPaint.hit(mx,my,px+pw-37,py+11,26,26));
         if(pw>=340){LexyPaint.label(c,"FABRIC 1.20.1",px+pw-148,py+20,100,LexyPaint.DIM);}
     }
@@ -135,7 +135,7 @@ public final class LexyModernScreen extends Screen {
                     LexyPaint.hit(mx,my,px+9+half,y,half,19));
         }
         if(!iconOnly()){
-            LexyPaint.label(c,"LEXY ONLINE",px+11,py+ph-31,sidebar-18,p.accent());
+            LexyPaint.label(c,"LOCAL CLIENT",px+11,py+ph-31,sidebar-18,p.accent());
             LexyPaint.label(c,"RSHIFT / F8",px+11,py+ph-17,sidebar-18,LexyPaint.DIM);
         }
     }
@@ -173,16 +173,16 @@ public final class LexyModernScreen extends Screen {
         LexyPaint.label(c,category.equals("Dashboard")?"MODULES: "+LexyModuleCatalog.entries().size():
                 category.equals("Profiles")?"CONFIG PROFILES":category.equals("Settings")?"APPEARANCE":filtered().size()+" AVAILABLE",
                 cx+2,py+ph-19,Math.max(40,cw-95),LexyPaint.DIM);
-        LexyPaint.label(c,"4.1  •  LOCAL",cx+Math.max(20,cw-96),py+ph-19,94,LexyTheme.palette().accent());
+        LexyPaint.label(c,"4.2  /  LOCAL",cx+Math.max(20,cw-96),py+ph-19,94,LexyTheme.palette().accent());
         if(drawer!=null)detail(c,mx,my);
         else if(LexyTheme.showTooltips&&!hoverHint.isEmpty()&&System.currentTimeMillis()>toastUntil){
             int tx=cx+2,ty=py+ph-54,tw=cw-4;
-            LexyPaint.rounded(c,tx,ty,tw,20,0xF21B2C3D);
+            LexyPaint.rounded(c,tx,ty,tw,20,0xF22A2A2A);
             LexyPaint.label(c,hoverHint,tx+8,ty+6,tw-16,LexyPaint.MUTED);
         }
         if(!toast.isEmpty()&&System.currentTimeMillis()<toastUntil){
             int bw=Math.min(cw,Math.max(105,textRenderer.getWidth(toast)+24));int bx=cx+Math.max(0,(cw-bw)/2),by=py+ph-55;
-            LexyPaint.rounded(c,bx,by,bw,23,0xF51F344B);LexyPaint.border(c,bx,by,bw,23,LexyTheme.palette().accent());
+            LexyPaint.rounded(c,bx,by,bw,23,0xF5313131);LexyPaint.border(c,bx,by,bw,23,LexyTheme.palette().accent());
             LexyPaint.label(c,toast,bx+10,by+8,bw-18,LexyPaint.WHITE);
         }
         super.render(c,mx,my,delta);
@@ -195,7 +195,7 @@ public final class LexyModernScreen extends Screen {
         LexyPaint.rect(c,cx+1,yy+8,3,hero-16,p.accent());
         String name=client!=null&&client.getSession()!=null?client.getSession().getUsername():"Player";
         LexyPaint.title(c,"WELCOME, "+name.toUpperCase(Locale.ROOT),cx+15,yy+12,cw<270?1f:1.4f,LexyPaint.WHITE);
-        LexyPaint.label(c,"Your client. Your way.",cx+15,yy+37,cw-24,p.accent());
+        LexyPaint.label(c,"Clean controls. No clutter.",cx+15,yy+37,cw-24,p.accent());
         if(hero>70)LexyPaint.label(c,"Profile: "+LexyTheme.activeProfile+"  •  Session "+LexyClient.sessionMinutes()+" min  •  RSHIFT to resume",cx+15,yy+58,cw-27,LexyPaint.MUTED);
         int statY=yy+hero+10,statCols=cw>=420?4:2,sw=(cw-(statCols-1)*8)/statCols;
         Runtime run=Runtime.getRuntime();String[] names={"FPS","PING","MEMORY","ACTIVE"};
@@ -235,19 +235,19 @@ public final class LexyModernScreen extends Screen {
             LexyPaint.border(c,x,y,cardW,cardH,hover?p.accent():p.border());
             if(active&&!action)LexyPaint.rect(c,x+6,y+2,Math.max(1,cardW-12),2,p.accent());
             boolean dense=cardH<81;
-            int iconSize=dense?30:cardH>=125?39:31;
-            int ix=dense?x+9:x+(cardW-iconSize)/2,iy=y+(dense?7:cardH>=125?12:8);
+            int iconSize=dense?26:31;
+            int ix=dense?x+9:x+(cardW-iconSize)/2,iy=y+(dense?6:8);
             LexyPaint.iconTile(c,LexyModuleCatalog.iconIndex(entries.get(i)),ix,iy,iconSize,p.sidebar());
-            int nameY=dense?y+9:iy+iconSize+(cardH>=125?10:6);
+            int nameY=dense?y+9:iy+iconSize+5;
             LexyPaint.label(c,entries.get(i).name(),x+(dense?47:10),nameY,cardW-(dense?65:31),LexyPaint.WHITE);
             LexyPaint.label(c,LexyTheme.isFavorite(entries.get(i).name())?"★":"☆",x+cardW-19,y+8,14,
                     LexyTheme.isFavorite(entries.get(i).name())?p.accent():LexyPaint.MUTED);
-            if(cardH>=125)LexyPaint.label(c,entries.get(i).detail(),x+10,nameY+16,cardW-20,LexyPaint.DIM);
+            if(cardH>=101)LexyPaint.label(c,entries.get(i).detail(),x+10,nameY+12,cardW-20,LexyPaint.DIM);
             int by=y+cardH-(dense?22:27),btnW=Math.max(26,cardW-54);
             LexyPaint.button(c,action?"OPEN / APPLY":active?"ENABLED":"DISABLED",x+9,by,btnW,dense?18:21,
-                    action?p.sidebar():active?0xFF174C40:0xFF3C2536,
-                    action?p.border():active?0xFF277E62:0xFF864254,
-                    action?LexyPaint.WHITE:active?0xFFA2F8D5:0xFFF4B2C1,
+                    action?p.sidebar():active?0xFF404040:0xFF2B2B2B,
+                    action?p.border():active?0xFF696969:0xFF525252,
+                    action?LexyPaint.WHITE:active?0xFFE3E3E3:0xFFC1C1C1,
                     LexyPaint.hit(mx,my,x+9,by,btnW,21));
             LexyPaint.iconTile(c,11,x+cardW-33,by,dense?18:23,p.sidebar());
         }
@@ -258,7 +258,7 @@ public final class LexyModernScreen extends Screen {
     }
     private void detail(DrawContext c,int mx,int my){
         var p=LexyTheme.palette();
-        c.fill(cx,py+50,cx+cw,viewBottom,0xBA020711);
+        c.fill(cx,py+50,cx+cw,viewBottom,0xBA070707);
         int w=Math.min(cw,Math.max(235,cw*65/100)),x=cx+cw-w,y=py+50,h=viewBottom-y;
         LexyPaint.rounded(c,x,y,w,h,p.sidebar());LexyPaint.border(c,x,y,w,h,p.border());
         LexyPaint.rect(c,x+1,y+1,3,h-2,p.accent());
@@ -272,8 +272,8 @@ public final class LexyModernScreen extends Screen {
         LexyPaint.label(c,entry.detail(),x+65,y+37,w-105,LexyPaint.MUTED);
         boolean action=LexyModuleCatalog.isAction(entry);
         LexyPaint.button(c,action?"OPEN / APPLY":entry.enabled().getAsBoolean()?"ENABLED":"DISABLED",
-                x+15,y+61,w-30,26,action?p.accentSoft():entry.enabled().getAsBoolean()?0xFF164A3F:0xFF452735,
-                action?p.accent():entry.enabled().getAsBoolean()?0xFF32866A:0xFF8F4861,
+                x+15,y+61,w-30,26,action?p.accentSoft():entry.enabled().getAsBoolean()?0xFF3E3E3E:0xFF2E2E2E,
+                action?p.accent():entry.enabled().getAsBoolean()?0xFF727272:0xFF595959,
                 LexyPaint.WHITE,LexyPaint.hit(mx,my,x+15,y+61,w-30,26));
         LexyPaint.label(c,"CONFIGURATION",x+16,y+101,w-31,LexyPaint.DIM);
         List<LexyModuleCatalog.Setting> settings=drawerSettings;
@@ -312,7 +312,7 @@ public final class LexyModernScreen extends Screen {
             LexyPaint.button(c,"LOAD",cx+cw-128,yy+5,65,24,p.sidebar(),p.border(),LexyPaint.WHITE,
                     LexyPaint.hit(mx,my,cx+cw-128,yy+5,65,24));
             LexyPaint.button(c,pendingDelete.equals(list.get(i))?"SURE?":"DEL",cx+cw-56,yy+5,50,24,
-                    pendingDelete.equals(list.get(i))?0xFF562B37:p.sidebar(),p.border(),LexyPaint.MUTED,
+                    pendingDelete.equals(list.get(i))?0xFF353535:p.sidebar(),p.border(),LexyPaint.MUTED,
                     LexyPaint.hit(mx,my,cx+cw-56,yy+5,50,24));
         }
         if(list.isEmpty())LexyPaint.label(c,"No local profiles saved. Create one above.",cx+12,listTop+28,cw-22,LexyPaint.MUTED);
@@ -336,8 +336,8 @@ public final class LexyModernScreen extends Screen {
             int cy=rowY+i*39;
             LexyPaint.rounded(c,cx,cy,cw,34,p.card());
             LexyPaint.label(c,names[i],cx+12,cy+13,cw-89,LexyPaint.WHITE);
-            LexyPaint.button(c,val[i]?"ON":"OFF",cx+cw-72,cy+6,60,22,val[i]?0xFF1B4F42:0xFF3C2635,
-                    val[i]?0xFF318666:0xFF704452,LexyPaint.WHITE,LexyPaint.hit(mx,my,cx+cw-72,cy+6,60,22));
+            LexyPaint.button(c,val[i]?"ON":"OFF",cx+cw-72,cy+6,60,22,val[i]?0xFF434343:0xFF2C2C2C,
+                    val[i]?0xFF727272:0xFF4E4E4E,LexyPaint.WHITE,LexyPaint.hit(mx,my,cx+cw-72,cy+6,60,22));
         }
     }
     private void invokeEntry(LexyModuleCatalog.Entry e){

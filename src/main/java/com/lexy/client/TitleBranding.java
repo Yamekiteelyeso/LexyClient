@@ -37,22 +37,22 @@ public final class TitleBranding {
             }
             if (screen instanceof TitleScreen) {
                 int bw=Math.min(170,Math.max(105,w/3));
-                Screens.getButtons(screen).add(ButtonWidget.builder(Text.literal("§bLEXY 4.1  §7MODULES"),button->mc.setScreen(new LexyModernScreen(screen))).dimensions(8,Math.max(10,h-36),bw,22).build());
+                Screens.getButtons(screen).add(ButtonWidget.builder(Text.literal("§7LEXY 4.2  §7MODULES"),button->mc.setScreen(new LexyModernScreen(screen))).dimensions(8,Math.max(10,h-36),bw,22).build());
                 ScreenEvents.afterRender(screen).register((s,ctx,mouseX,mouseY,delta)->draw(ctx,w,h));
-                System.out.println("[LexyClient 4.1.0] Title screen fallback button initialized "+w+"x"+h);
+                System.out.println("[LexyClient 4.2.0] Title screen fallback button initialized "+w+"x"+h);
             } else if (screen instanceof GameMenuScreen) {
                 int bw=Math.min(160,Math.max(95,w/3));
-                Screens.getButtons(screen).add(ButtonWidget.builder(Text.literal("§bLEXY 4.1  §7MODULES"),button->mc.setScreen(new LexyModernScreen(screen))).dimensions(Math.max(6,w-bw-8),Math.max(5,h-32),bw,22).build());
+                Screens.getButtons(screen).add(ButtonWidget.builder(Text.literal("§7LEXY 4.2  §7MODULES"),button->mc.setScreen(new LexyModernScreen(screen))).dimensions(Math.max(6,w-bw-8),Math.max(5,h-32),bw,22).build());
             }
         });
     }
     private static void draw(DrawContext ctx,int w,int h) {
         int panelWidth=Math.min(246,Math.max(90,w-16));
-        ctx.fill(8,7,8+panelWidth,66,0xE90D1728);
+        ctx.fill(8,7,8+panelWidth,66,0xE9161616);
         ctx.fill(8,7,11,66,LexyTheme.palette().accent());
         ctx.drawTexture(LexyClient.LOGO,17,13,45,45,0,0,256,256,256,256);
         var font=LexyClient.mc.textRenderer;
-        ctx.drawTextWithShadow(font,Text.literal("LexyClient 4.1"),70,21,0xFF80C6FF);
-        if(panelWidth>200)ctx.drawTextWithShadow(font,"RSHIFT / F8  |  /lexy",70,39,0xFFC9D6E7);
+        ctx.drawTextWithShadow(font,Text.literal("LexyClient 4.2"),70,21,0xFFBBBBBB);
+        if(panelWidth>200)ctx.drawTextWithShadow(font,"RSHIFT / F8  |  /lexy",70,39,0xFFD4D4D4);
     }
 }

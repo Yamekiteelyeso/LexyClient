@@ -1,8 +1,9 @@
-LEXYCLIENT 4.1 STUDIO
-Fabric Loader + Fabric API / Minecraft Java 1.20.1 / Java 17
+LexyClient 4.2.0 — Minecraft Fabric 1.20.1 (Java 17)
 
-Install the .jar only (not this zip). Remove any earlier LexyClient jars.
-Amethyst/Pojav users: place the jar in the active launcher's .minecraft/mods folder.
-In the Minecraft log check: lexy-client 4.1.0
-Access menu: RIGHT SHIFT, F8, or /lexy (in world).
-Title screen: use VANILLA to return to the original Minecraft menu.
+1) Close Minecraft. Remove OLD lexy-client JARs from the active profile's mods folder.
+2) Copy ONLY lexy-client-4.2.0.jar to mods (NOT this ZIP).
+3) Ensure Fabric Loader and Fabric API match 1.20.1.
+4) Open game: RSHIFT / F8 / /lexy; HUD editor: Right Ctrl.
+5) If the mod does not appear in latest.log under Loading mods, the launcher is using a different mods folder.
+
+The HUD migration keeps saved widget positions and toggles; its size is set to compact once for pre-4.2 configs.

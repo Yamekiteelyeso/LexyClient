@@ -51,6 +51,16 @@ public final class LexyModuleCatalog {
         add("Custom Main Menu","Render","Use the Lexy night-sky menu at startup","☾",()->LexyTheme.customTitle,()->{LexyTheme.customTitle=!LexyTheme.customTitle;LexyTheme.save();},-1);
         add("UI Animations","Render","Enable lightweight hover and entrance transitions","◈",()->LexyTheme.animate,()->{LexyTheme.animate=!LexyTheme.animate;LexyTheme.save();},-1);
         for(String m:new String[]{"FPS","Ping","Health","Totems","Speed","Memory","Biome","Server","Mainhand Durability","XYZ X","XYZ Y","XYZ Z","Food","Free Slots"})hud(m,"Draw a real-time "+m+" indicator in the HUD");
+        add("HUD Size","HUD","Change the size of every on-screen widget","▣",()->false,()->{
+            LexyClient.hudScalePercent=LexyClient.hudScalePercent>=120?55:LexyClient.hudScalePercent+5;
+            changed();},-1);
+        add("HUD Style","HUD","Flat, outline or text-only widgets","▣",()->false,()->{
+            LexyClient.hudStyle=(LexyClient.hudStyle+1)%3;changed();},-1);
+        add("HUD Background","HUD","Toggle low-profile black widget backplates","▣",()->LexyClient.hudBackground,()->{
+            LexyClient.hudBackground=!LexyClient.hudBackground;changed();},-1);
+        add("HUD Editor","HUD","Drag widgets, change presets and fine-tune positions","▣",()->false,()->{
+            MinecraftClient mc=MinecraftClient.getInstance();mc.setScreen(new HudEditorScreen(mc.currentScreen));},-1);
+
         for(int i=0;i<OptimizationManager.OPTIONS.size();i++){
             final int idx=i;var option=OptimizationManager.OPTIONS.get(i);
             add(option.name(),"Optimization",option.help(),"▥",()->false,()->OptimizationManager.adjust(idx,1),-1);
@@ -123,6 +133,9 @@ public final class LexyModuleCatalog {
                 option(s,"Toggle zoom","Press once instead of holding",()->yes(ZoomController.toggleMode),d->ZoomController.toggleMode=!ZoomController.toggleMode);
             }
             case "Durability Alert" -> option(s,"Warning threshold","Percentage of durability remaining",()->LexyExtras.warnDurability+"%",d->LexyExtras.warnDurability=clamp(LexyExtras.warnDurability+d,2,50));
+            case "HUD Size" -> option(s,"Size","Compact HUD scale",()->LexyClient.hudScalePercent+"%",d->LexyClient.hudScalePercent=clamp(LexyClient.hudScalePercent+d*5,45,140));
+            case "HUD Style" -> option(s,"Appearance","Neutral text, flat or outline",()->switch(LexyClient.hudStyle){case 1->"OUTLINE";case 2->"TEXT";default->"FLAT";},d->LexyClient.hudStyle=Math.floorMod(LexyClient.hudStyle+d,3));
+            case "HUD Background" -> option(s,"Backdrop","Use a compact dark backing",()->yes(LexyClient.hudBackground),d->LexyClient.hudBackground=!LexyClient.hudBackground);
             case "HUD Opacity" -> option(s,"Opacity","Adjust on-screen HUD backgrounds",()->LexyClient.hudOpacity+"/255",d->LexyClient.hudOpacity=clamp(LexyClient.hudOpacity+d*10,60,245));
             case "Adaptive FPS" -> {
                 option(s,"Target FPS","Desired frame rate",()->OptimizationManager.targetFps+" FPS",d->OptimizationManager.targetFps=clamp(OptimizationManager.targetFps+d*10,30,144));
@@ -156,7 +169,7 @@ public final class LexyModuleCatalog {
             case "Reset UI Scale", "Restore Graphics" -> 30;
             case "Local Music", "Spotify Integration", "UI Sounds" -> 8;
             case "Theme Picker" -> 9;
-            case "HUD Opacity" -> 4;
+            case "HUD Opacity","HUD Size","HUD Style","HUD Background" -> 4;
             default -> switch(e.category()){
                 case "Dashboard" -> 0;
                 case "Combat" -> 1;
@@ -179,7 +192,7 @@ public final class LexyModuleCatalog {
             || n.equals("Copy Coordinates")||n.equals("Save Waypoint")||n.equals("Reset UI Scale")
             || n.equals("HUD Editor")||n.equals("Keys & Macros")||n.equals("Local Music")
             || n.equals("Spotify Integration")||n.equals("Theme Picker")||n.equals("Custom HUD Layout")
-            || n.equals("HUD Opacity");
+            || n.equals("HUD Opacity")||n.equals("HUD Size")||n.equals("HUD Style");
     }
     public static void changed(){LexyClient.save();LexyTheme.save();HudRenderer.invalidate();}
     private static int clamp(int x,int low,int high){return Math.max(low,Math.min(high,x));}

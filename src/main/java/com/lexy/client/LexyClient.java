@@ -29,19 +29,20 @@ public final class LexyClient implements ClientModInitializer {
  public static final Map<String, Integer> colors = new LinkedHashMap<>();
  public static final Map<String, Integer> positions = new LinkedHashMap<>();
  public static MinecraftClient mc;
- public static int hudOpacity = 215, hudSpacing = 21, accentChoice = 0;
- public static int menuScalePercent = 100, hudScalePercent = 100, hudGridSize = 12;
+ public static int hudOpacity = 195, hudSpacing = 15, accentChoice = 0;
+ public static int menuScalePercent = 100, hudScalePercent = 78, hudGridSize = 12;
  public static boolean hudGridSnap = true, hudShowGrid = true;
  public static int lowHealthThreshold = 8, armorWarnPercent = 15, hudTextColor = 0;
  public static final net.minecraft.util.Identifier LOGO = new net.minecraft.util.Identifier("lexy-client", "textures/gui/logo.png");
- public static boolean hudBackground = true, hudShadow = true, compactHud = false, spotifyHud = true;
+ public static boolean hudBackground = true, hudShadow = false, compactHud = true, spotifyHud = true;
  public static String spotifyClientId = "";
  public static boolean uiSounds=true;
  public static boolean uiHoverSounds=true;
  public static int uiSoundVolume=35;
- public static int maxHudWidgets=7;
+ public static int maxHudWidgets=5;
+ public static int hudStyle=0; // 0 flat, 1 outline, 2 text-only
  public static int localMusicVolume=65; public static boolean localMusicLoop=false;
- public static final int[] ACCENTS = {0xFF3B82F6,0xFF60A5FA,0xFF2563EB,0xFF22D3EE,0xFF7489B8,0xFF467FB9};
+ public static final int[] ACCENTS = {0xFFE0E0E0,0xFFBDBDBD,0xFF999999,0xFF777777,0xFFCCCCCC,0xFFAAAAAA};
  public static final net.minecraft.util.Identifier ICON_ATLAS = new net.minecraft.util.Identifier("lexy-client", "textures/gui/icons.png");
  private static boolean welcomeShown = false;
  public static int accent(){return ACCENTS[Math.floorMod(accentChoice,ACCENTS.length)];}
@@ -60,7 +61,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();HudRenderer.invalidate();save();
  }
 
- private static final int CONFIG_VERSION = 300;
+ private static final int CONFIG_VERSION = 420;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -69,7 +70,8 @@ public final class LexyClient implements ClientModInitializer {
   enabled.put("AutoTotem", enabled.getOrDefault("AutoTotem", false));
   compactHud = true;
   hudPreset = 1;
-  hudSpacing = Math.min(hudSpacing, 19);
+  hudSpacing = Math.min(hudSpacing, 15);
+  hudScalePercent = Math.min(hudScalePercent, 78);
  }
 
  private static KeyBinding guiKey, fallbackGuiKey, hudKey, spotifyKey;
@@ -90,7 +92,7 @@ public final class LexyClient implements ClientModInitializer {
  private static int hits, swings, kills, deaths, longestCombo, combo, damageEvents, lastHealth = -1;
  private static String lastTarget = "None";
  private static java.util.UUID lastAttacked; private static boolean wasDead;
- private static final int WHITE = 0xFFF2F7FF, BLUE = 0xFF409AFF;
+ private static final int WHITE = 0xFFF2F2F2, BLUE = 0xFFB0B0B0;
  private static final Path CONFIG = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("lexy-client.json");
  public record Module(String id, String category, Supplier<String> value, boolean defaultOn, boolean drawInHud) {}
  private static void add(String category, String id, Supplier<String> value, boolean on) { MODULES.add(new Module(id, category, value, on, true)); enabled.put(id,on); }
@@ -208,7 +210,7 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();
- System.out.println("[LexyClient 4.1.0] Client entrypoint invoked. Fabric loaded LexyClient.");
+ System.out.println("[LexyClient 4.2.0] Client entrypoint invoked. Fabric loaded LexyClient.");
  TitleBranding.register();LexyCommands.register();
  try{LexySounds.init();}catch(Exception ex){System.err.println("[LexyClient] Audio registration unavailable: "+ex);}
  sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();LexyTheme.load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"key.categories.lexyclient"));
@@ -223,7 +225,7 @@ public final class LexyClient implements ClientModInitializer {
   else if(client.currentScreen instanceof LexyScreen current)current.close();
   else if(client.currentScreen==null)client.setScreen(new LexyModernScreen(null));
  }while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);LexyTools.tick(client);LexyExtras.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();welcomeShown=false;return;}
- if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§bLEXY 4.1 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 4.1.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+ if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§7LEXY 4.2 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 4.2.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
@@ -231,24 +233,24 @@ public final class LexyClient implements ClientModInitializer {
   if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen||mc.currentScreen instanceof LexyModernScreen||mc.currentScreen instanceof HudEditorScreen)return;
   HudRenderer.render(context,false,null);
   if(LexyExtras.hasWaypoint && LexyExtras.waypointsHud){
-    String wp="WAYPOINT " + LexyExtras.waypointName + "  "+LexyExtras.waypoint();
-    int tw=Math.min(mc.getWindow().getScaledWidth()-12,mc.textRenderer.getWidth(wp)+20);
-    if(tw>20){context.fill(5,mc.getWindow().getScaledHeight()-47,tw+5,mc.getWindow().getScaledHeight()-29,0xDE101C2C);
-      context.drawTextWithShadow(mc.textRenderer,wp,13,mc.getWindow().getScaledHeight()-42,LexyTheme.palette().accent());}
+    String wp="WP " + LexyExtras.waypointName + "  "+LexyExtras.waypoint();
+    int tw=Math.min(mc.getWindow().getScaledWidth()-12,mc.textRenderer.getWidth(wp)+10);
+    if(tw>20){context.fill(5,mc.getWindow().getScaledHeight()-33,tw+5,mc.getWindow().getScaledHeight()-19,0xDE101010);
+      context.drawTextWithShadow(mc.textRenderer,wp,9,mc.getWindow().getScaledHeight()-30,0xFFDCDCDC);}
   }
   if(LexyTools.watermark){
-    int sw=mc.getWindow().getScaledWidth();int y=mc.getWindow().getScaledHeight()-26;
-    int x=Math.max(4,sw-168);
-    context.fill(x,y,sw-5,y+19,0xD90F1C2C);
-    context.fill(x,y,x+3,y+19,accent());
-    context.drawTextWithShadow(mc.textRenderer,"LEXY 4.1  |  RSHIFT / F8",x+10,y+6,0xFFC5E4FF);
+    int sw=mc.getWindow().getScaledWidth();int y=mc.getWindow().getScaledHeight()-18;
+    int x=Math.max(4,sw-117);
+    context.fill(x,y,sw-5,y+13,0xD90F0F0F);
+    
+    context.drawTextWithShadow(mc.textRenderer,"LEXY / RSHIFT",x+6,y+3,0xFFDADADA);
   }
  });
  net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);LexyTools.shutdown(client);LexyExtras.shutdown(client);LexyTheme.save();});
  }
  public static void save(){try{Files.createDirectories(CONFIG.getParent());JsonObject root=new JsonObject();JsonObject mods=new JsonObject();enabled.forEach(mods::addProperty);root.add("modules",mods);JsonObject coords=new JsonObject();positions.forEach(coords::addProperty);root.add("positions",coords);root.addProperty("configVersion",CONFIG_VERSION);
  JsonObject style=new JsonObject();style.addProperty("watermark",LexyTools.watermark);style.addProperty("autoSprint",LexyTools.autoSprint);style.addProperty("fullbright",LexyTools.fullbright);
- style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
+ style.addProperty("hudStyle",hudStyle);style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
  style.addProperty("accentChoice",accentChoice);
  style.addProperty("menuScalePercent",menuScalePercent);style.addProperty("hudScalePercent",hudScalePercent);
  style.addProperty("hudGridSize",hudGridSize);style.addProperty("hudGridSnap",hudGridSnap);style.addProperty("hudShowGrid",hudShowGrid);style.addProperty("hudBackground",hudBackground);
@@ -308,8 +310,9 @@ public final class LexyClient implements ClientModInitializer {
  if(style.has("watermark"))LexyTools.watermark=style.get("watermark").getAsBoolean();
  if(style.has("autoSprint"))LexyTools.autoSprint=style.get("autoSprint").getAsBoolean();
  if(style.has("fullbright"))LexyTools.fullbright=style.get("fullbright").getAsBoolean();
+ if(style.has("hudStyle"))hudStyle=Math.max(0,Math.min(2,style.get("hudStyle").getAsInt()));
  if(style.has("hudOpacity"))hudOpacity=Math.max(50,Math.min(245,style.get("hudOpacity").getAsInt()));
- if(style.has("hudSpacing"))hudSpacing=Math.max(16,Math.min(36,style.get("hudSpacing").getAsInt()));
+ if(style.has("hudSpacing"))hudSpacing=Math.max(10,Math.min(36,style.get("hudSpacing").getAsInt()));
  if(style.has("accentChoice"))accentChoice=style.get("accentChoice").getAsInt();
  if(style.has("menuScalePercent"))menuScalePercent=Math.max(65,Math.min(110,style.get("menuScalePercent").getAsInt()));
  if(style.has("hudScalePercent"))hudScalePercent=Math.max(45,Math.min(150,style.get("hudScalePercent").getAsInt()));
@@ -320,7 +323,7 @@ public final class LexyClient implements ClientModInitializer {
  if(style.has("uiHoverSounds"))uiHoverSounds=style.get("uiHoverSounds").getAsBoolean();
  if(style.has("uiSounds"))uiSounds=style.get("uiSounds").getAsBoolean();
  if(style.has("uiSoundVolume"))uiSoundVolume=Math.max(0,Math.min(100,style.get("uiSoundVolume").getAsInt()));
- if(style.has("maxHudWidgets"))maxHudWidgets=Math.max(3,Math.min(10,style.get("maxHudWidgets").getAsInt()));
+ if(style.has("maxHudWidgets"))maxHudWidgets=Math.max(2,Math.min(10,style.get("maxHudWidgets").getAsInt()));
  if(style.has("hudPreset"))hudPreset=Math.max(0,Math.min(2,style.get("hudPreset").getAsInt()));
  if(style.has("hudMinimal"))hudMinimal=style.get("hudMinimal").getAsBoolean();
  if(style.has("hudShadow"))hudShadow=style.get("hudShadow").getAsBoolean();
@@ -401,5 +404,15 @@ public final class LexyClient implements ClientModInitializer {
  if(root.has("localMusicVolume"))localMusicVolume=Math.max(0,Math.min(100,root.get("localMusicVolume").getAsInt()));
  if(root.has("localMusicLoop"))localMusicLoop=root.get("localMusicLoop").getAsBoolean();
  if(configVersion < 170) applyCompactDefaults();
+ // Preserve existing widget positions and module toggles while migrating the older oversized HUD.
+ if(configVersion < 420){
+     hudScalePercent=Math.min(hudScalePercent,80);
+     hudSpacing=Math.min(hudSpacing,15);
+     maxHudWidgets=Math.min(maxHudWidgets,5);
+     compactHud=true;
+     hudShadow=false;
+     hudStyle=0;
+     HudRenderer.invalidate();
+ }
  }catch(Exception e){System.err.println("Lexy config load failed: "+e);applyCompactDefaults();}}
 }
