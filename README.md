@@ -1,4 +1,4 @@
-# LexyClient 2.8 — Blue Slate Interface
+# LexyClient 2.8.1 — Blue Slate Interface
 
 A Fabric **1.20.1** Minecraft client mod for PC and PojavLauncher (Java 17).
 
@@ -20,7 +20,7 @@ A Fabric **1.20.1** Minecraft client mod for PC and PojavLauncher (Java 17).
 
 ## Installation
 
-Install Minecraft 1.20.1, Fabric Loader, Fabric API and Java 17. Use the remapped `lexy-client-2.8.0.jar` from `build/libs` or GitHub Actions, in `mods`. **Remove earlier LexyClient JARs** to avoid conflicting mod IDs.
+Install Minecraft 1.20.1, Fabric Loader, Fabric API and Java 17. Use the remapped `lexy-client-2.8.1.jar` from `build/libs` or GitHub Actions, in `mods`. **Remove earlier LexyClient JARs** to avoid conflicting mod IDs.
 
 ## Build
 

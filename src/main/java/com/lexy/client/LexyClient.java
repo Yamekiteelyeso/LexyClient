@@ -58,7 +58,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();HudRenderer.invalidate();save();
  }
 
- private static final int CONFIG_VERSION = 280;
+ private static final int CONFIG_VERSION = 281;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -72,11 +72,14 @@ public final class LexyClient implements ClientModInitializer {
 
  private static KeyBinding guiKey, hudKey, spotifyKey;
  private static long lastGuiToggleNanos;
+ private static boolean menuShiftHeld;
  public static boolean allowMenuToggle(){
   long now=System.nanoTime();
-  if(now-lastGuiToggleNanos<180_000_000L)return false;
+  if(menuShiftHeld || now-lastGuiToggleNanos<180_000_000L)return false;
+  menuShiftHeld=true;
   lastGuiToggleNanos=now;return true;
  }
+ public static void menuShiftReleased(){menuShiftHeld=false;}
 
  private static long ticks, combatTicks, lastHitTick, sessionStart;
  private static int hits, swings, kills, deaths, longestCombo, combo, damageEvents, lastHealth = -1;
@@ -196,7 +199,11 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
- ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed()){
+ ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;
+  // Screens consume key-release events; this covers the same release after closing a screen.
+  if(client.currentScreen==null && client.getWindow()!=null &&
+     !InputUtil.isKeyPressed(client.getWindow().getHandle(),GLFW.GLFW_KEY_RIGHT_SHIFT))menuShiftReleased();
+  while(guiKey.wasPressed()){
   if(!allowMenuToggle())continue;
   if(client.currentScreen instanceof LexyScreen current)current.close();
   else if(client.currentScreen==null)client.setScreen(new LexyScreen(false));
@@ -259,7 +266,13 @@ public final class LexyClient implements ClientModInitializer {
  root.addProperty("adaptiveMaxDistance",OptimizationManager.maximumDistance);
  root.add("style",style);root.addProperty("spotifyClientId",spotifyClientId);
  root.addProperty("localMusicVolume",LocalMusicPlayer.INSTANCE.volume());root.addProperty("localMusicLoop",LocalMusicPlayer.INSTANCE.looping());
- Files.writeString(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
+ writeAtomic(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
+ private static void writeAtomic(Path path,String data) throws IOException {
+  Path temporary=path.resolveSibling(path.getFileName().toString()+".tmp");
+  Files.writeString(temporary,data);
+  try{Files.move(temporary,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);}
+  catch(java.nio.file.AtomicMoveNotSupportedException ex){Files.move(temporary,path,StandardCopyOption.REPLACE_EXISTING);}
+ }
  public static void load(){if(!Files.exists(CONFIG)){applyCompactDefaults();return;}try{JsonObject root=JsonParser.parseString(Files.readString(CONFIG)).getAsJsonObject();int configVersion=root.has("configVersion")?root.get("configVersion").getAsInt():0;if(root.has("modules"))for(var e:root.getAsJsonObject("modules").entrySet())if(enabled.containsKey(e.getKey()))enabled.put(e.getKey(),e.getValue().getAsBoolean());if(root.has("positions"))for(var e:root.getAsJsonObject("positions").entrySet())positions.put(e.getKey(),e.getValue().getAsInt());
  if(root.has("style")){JsonObject style=root.getAsJsonObject("style");
  if(style.has("hudOpacity"))hudOpacity=Math.max(50,Math.min(245,style.get("hudOpacity").getAsInt()));

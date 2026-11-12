@@ -121,6 +121,10 @@ public final class HudEditorScreen extends Screen {
         return super.keyPressed(keyCode,scanCode,modifiers);
     }
 
+    @Override public boolean keyReleased(int keyCode,int scanCode,int modifiers){
+        if(keyCode==GLFW.GLFW_KEY_RIGHT_SHIFT)LexyClient.menuShiftReleased();
+        return super.keyReleased(keyCode,scanCode,modifiers);
+    }
     @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}
 }

@@ -14,6 +14,8 @@ public final class KeybindSettingsScreen extends Screen {
     private int page=0,group=0,waiting=-1;
     private final TextFieldWidget[] macros=new TextFieldWidget[4];
     private int top,left,panelWidth;
+    private float viewScale = 1f;
+    private double logical(double coordinate){return coordinate / viewScale;}
 
     public KeybindSettingsScreen(Screen parent){super(Text.literal("LexyClient / Keybinds"));this.parent=parent;}
     private int half(){return (panelWidth-28)/2;}
@@ -35,9 +37,13 @@ public final class KeybindSettingsScreen extends Screen {
         label(c,name,x+10,y+(h-9)/2,w-20,TEXT);
     }
     @Override protected void init(){
-        panelWidth=Math.min(670,Math.max(300,width-24));
-        left=(width-panelWidth)/2;
-        top=Math.max(7,(height-346)/2);
+        // Keep the *entire* keybind editor on-screen even at Minecraft GUI scale 4 or on Pojav.
+        viewScale = Math.max(.25f, Math.min(1f,
+                Math.min((width - 12f) / 690f, (height - 12f) / 358f)));
+        int vw = Math.round(width / viewScale), vh = Math.round(height / viewScale);
+        panelWidth=Math.min(670,Math.max(300,vw-24));
+        left=(vw-panelWidth)/2;
+        top=Math.max(7,(vh-346)/2);
         if(page==1){
             for(int i=0;i<4;i++){
                 int y=top+100+i*42;
@@ -52,6 +58,8 @@ public final class KeybindSettingsScreen extends Screen {
     @Override public void render(DrawContext c,int mx,int my,float dt){
         renderBackground(c);
         c.fillGradient(0,0,width,height,0xEE050D18,0xEF102035);
+        c.getMatrices().push();
+        c.getMatrices().scale(viewScale,viewScale,1);
         fill(c,left-7,top-7,panelWidth+14,352,0x80000000);
         fill(c,left-2,top-2,panelWidth+4,342,BORDER);
         fill(c,left,top,panelWidth,338,BACKGROUND);
@@ -92,9 +100,11 @@ public final class KeybindSettingsScreen extends Screen {
         fill(c,left+12,top+308,panelWidth-24,1,BORDER);
         label(c,"RSHIFT: CLOSE MENU   ·   ESC: BACK",left+17,top+318,panelWidth-166,0xFF85A1BC);
         control(c,"SAVE / BACK",left+panelWidth-150,top+309,136,26,mx,my,false);
-        super.render(c,mx,my,dt);
+        super.render(c,(int)logical(mx),(int)logical(my),dt);
+        c.getMatrices().pop();
     }
     @Override public boolean mouseClicked(double mx,double my,int button){
+        mx=logical(mx);my=logical(my);
         if(button==0){
             int hw=half();
             if(inside(mx,my,left+12,top+58,hw,29)){
@@ -124,11 +134,17 @@ public final class KeybindSettingsScreen extends Screen {
         return super.mouseClicked(mx,my,button);
     }
     @Override public boolean mouseScrolled(double mx,double my,double amount){
+        mx=logical(mx);my=logical(my);
         if(page==0&&amount!=0){
             group=Math.max(0,Math.min(totalGroups()-1,group-(int)Math.signum(amount)));
             LexySounds.navigate();return true;
         }
         return super.mouseScrolled(mx,my,amount);
+    }
+    @Override public void mouseMoved(double mx,double my){super.mouseMoved(logical(mx),logical(my));}
+    @Override public boolean mouseReleased(double mx,double my,int button){return super.mouseReleased(logical(mx),logical(my),button);}
+    @Override public boolean mouseDragged(double mx,double my,int button,double dx,double dy){
+        return super.mouseDragged(logical(mx),logical(my),button,logical(dx),logical(dy));
     }
     @Override public boolean keyPressed(int key,int scan,int mods){
         if(key==GLFW.GLFW_KEY_RIGHT_SHIFT){
@@ -145,6 +161,10 @@ public final class KeybindSettingsScreen extends Screen {
         }
         if(key==GLFW.GLFW_KEY_ESCAPE){close();return true;}
         return super.keyPressed(key,scan,mods);
+    }
+    @Override public boolean keyReleased(int key,int scan,int mods){
+        if(key==GLFW.GLFW_KEY_RIGHT_SHIFT)LexyClient.menuShiftReleased();
+        return super.keyReleased(key,scan,mods);
     }
     @Override public void close(){LexyKeybinds.save();LexySounds.close();if(client!=null)client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}

@@ -166,7 +166,7 @@ public final class LexyScreen extends Screen {
         frame(c,panelX+13,panelY+14,43,43,0xFF365A7A);
         c.drawTexture(LexyClient.LOGO,panelX+16,panelY+17,37,37,0,0,256,256,256,256);
         label(c,"LEXY",panelX+64,panelY+19,sidebarW-75,WHITE);
-        label(c,"CLIENT  /  2.8",panelX+64,panelY+35,sidebarW-75,0xFF7DB8F2);
+        label(c,"CLIENT  /  2.8.1",panelX+64,panelY+35,sidebarW-75,0xFF7DB8F2);
         rect(c,panelX+15,panelY+69,sidebarW-27,1,OUTLINE);
         label(c,"NAVIGATION",panelX+18,panelY+81,sidebarW-32,0xFF718DA9);
         navScroll=Math.max(0,Math.min(navScroll,navLimit()));
@@ -1073,7 +1073,7 @@ public final class LexyScreen extends Screen {
         return super.mouseClicked(mx,my,button);
     }
     @Override public void mouseMoved(double mx,double my){
-        super.mouseMoved(mx,my);
+        super.mouseMoved(logical(mx),logical(my));
         double px=logical(mx),py=logical(my);
         int found=-1;
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+navCapacity());i++){
@@ -1121,6 +1121,10 @@ public final class LexyScreen extends Screen {
             }
             scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
         }return super.mouseScrolled(mx,my,amount);
+    }
+    @Override public boolean keyReleased(int keyCode,int scanCode,int modifiers){
+        if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT)LexyClient.menuShiftReleased();
+        return super.keyReleased(keyCode,scanCode,modifiers);
     }
     @Override public void close(){LexySounds.close();LexyClient.save();if(client!=null)client.setScreen(parent);}
     @Override public boolean shouldPause(){return false;}

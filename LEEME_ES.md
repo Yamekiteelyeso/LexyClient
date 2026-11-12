@@ -1,4 +1,4 @@
-# LexyClient 2.8 — Interfaz renovada
+# LexyClient 2.8.1 — Interfaz renovada
 
 ## Cambios de esta versión
 
@@ -13,7 +13,7 @@ La interfaz mantiene los controles táctiles de navegación para PojavLauncher, 
 1. Utiliza Minecraft 1.20.1 con Fabric Loader y Fabric API.
 2. Asegúrate de usar Java 17.
 3. Elimina cualquier JAR anterior de LexyClient de `mods`.
-4. Copia `LexyClient-2.8.0.jar` en `mods`.
+4. Copia `LexyClient-2.8.1.jar` en `mods`.
 5. Inicia Minecraft y presiona **Shift derecho** para abrir/cerrar el menú. En Pojav también puedes utilizar el botón del menú de pausa.
 
 ## Funciones existentes
