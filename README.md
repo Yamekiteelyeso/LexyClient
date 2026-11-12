@@ -1,14 +1,13 @@
-# LexyClient 2.2 — Slate Edition
+# LexyClient 2.3.0 — Spotify Session Edition
 
-Minecraft 1.20.1 Fabric client mod, supporting PC and PojavLauncher input.
+A Fabric Minecraft 1.20.1 Java 17 client mod. GitHub Actions builds a remapped installable JAR.
 
-- Responsive graphite/slate GUI with simple status cards, restrained accent and touch navigation.
-- In-game FPS, ping and other useful metrics, with configurable, draggable HUD and cached widget layout.
-- AutoTotem: direct or inventory-based vanilla actions; sequential state checks, timeouts and backoff.
-- Spotify OAuth PKCE with Android browser launch, manual loopback callback fallback, account diagnostics, Spotify Connect playback/device controls, and conservative rate-limit handling.
-- 11 original UI sound cues with configurable volume and a hover audio option.
-- Video/optimization controls confined to the menu.
+The Spotify design recreates comparable behavior to the user's reference SpotiCraft 1.20.1 mod **without** copying its proprietary code or client ID (SpotiCraft is All Rights Reserved).
 
-Requires Java 17, Fabric Loader, Fabric API and Minecraft 1.20.1. Build using `gradle build` with Gradle 8.11.1. The `.jar` appears under `build/libs/`.
+Spotify features: Authorization Code + PKCE with local callback and mobile clipboard fallback; user-owned Spotify Client ID; token refresh session persistence via `SpotifySessionStore`; profile, playback and progress, shuffle/repeat/volume, Spotify Connect device choices, track search and playlists. Tokens are private local config, and not logged.
 
-Read [LEEME_ES.md](LEEME_ES.md) for Spanish installation notes, Spotify requirements and limits. Full live-game and device testing is still required.
+Spotify is a separate player; neither the app nor LexyClient streams Spotify audio in Minecraft. Spotify Premium/development allowlists and API restrictions still apply.
+
+Also retains the scalable GUI, draggable HUD, original OGG UI audio cues, optimization settings and existing AutoTotem controls.
+
+See [LEEME_ES.md](LEEME_ES.md) for user configuration and installation details.

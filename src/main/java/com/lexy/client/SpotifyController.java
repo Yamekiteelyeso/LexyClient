@@ -21,7 +21,7 @@ import net.minecraft.util.Util;
 public final class SpotifyController {
     public static final SpotifyController INSTANCE = new SpotifyController();
     private static final String REDIRECT = "http://127.0.0.1:43871/callback";
-    private static final String SCOPES = "user-read-playback-state user-read-currently-playing user-modify-playback-state";
+    private static final String SCOPES = "user-read-playback-state user-read-currently-playing user-modify-playback-state user-read-private playlist-read-private";
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {Thread t=new Thread(r,"Lexy-Spotify-IO");t.setDaemon(true);return t;});
     private final ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor(r -> {Thread t=new Thread(r,"Lexy-Spotify-Poll");t.setDaemon(true);return t;});
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(6)).build();
@@ -31,7 +31,10 @@ public final class SpotifyController {
     private volatile long expireAt=0;
     private volatile List<Track> tracks=List.of();
     private volatile List<Device> devices=List.of();
-    private volatile String activeDevice="";
+    private volatile String activeDevice="", profileName="", repeatMode="off", activeTrackId="";
+    private volatile int progressMs=0, durationMs=0, volumePercent=-1;
+    private volatile boolean shuffleEnabled=false;
+    private volatile List<Playlist> playlists=List.of();
     private volatile HttpServer callback;
     private volatile String verifier="", state="";
     private volatile boolean manualOnly=false;
@@ -41,6 +44,7 @@ public final class SpotifyController {
     private int pollCount=0;
     public record Track(String title,String artist,String uri) {}
     public record Device(String id,String name,String type,boolean active) {}
+    public record Playlist(String name,String id,String uri) {}
     private SpotifyController(){poller.scheduleWithFixedDelay(()->{
         if(isConnected() && System.currentTimeMillis()>=nextPollAllowed) executor.submit(()->{
             try {
@@ -49,7 +53,15 @@ public final class SpotifyController {
             } catch(Exception e){status="Spotify: "+shortError(e);}
         });
     },3,20,TimeUnit.SECONDS);}
-    public void setClientId(String id){clientId=id==null?"":id.trim();}
+    public synchronized void setClientId(String id){
+        String normalized=id==null?"":id.trim();
+        if(normalized.equals(clientId))return;
+        clientId=normalized;
+        cancelLogin();
+        accessToken="";refreshToken=SpotifySessionStore.load(clientId);expireAt=0;
+        profileName="";playing="Nothing playing";devices=List.of();playlists=List.of();
+        status=refreshToken.isBlank()?"Not connected":"Restoring saved Spotify session...";
+    }
     public String clientId(){return clientId;}
     public boolean isConnected(){return !refreshToken.isBlank()||!accessToken.isBlank();}
     public String status(){return status;}
@@ -58,6 +70,14 @@ public final class SpotifyController {
     public List<Track> tracks(){return tracks;}
     public List<Device> devices(){return devices;}
     public String activeDevice(){return activeDevice;}
+    public String profileName(){return profileName;}
+    public String repeatMode(){return repeatMode;}
+    public boolean shuffleEnabled(){return shuffleEnabled;}
+    public int volumePercent(){return volumePercent;}
+    public int progressMs(){return progressMs;}
+    public int durationMs(){return durationMs;}
+    public List<Playlist> playlists(){return playlists;}
+    public static String timeString(int ms){return (ms/60000)+":"+String.format(Locale.ROOT,"%02d",(ms/1000)%60);}
     public String authUrl(){return pendingAuthUrl;}
     public boolean pending(){return !pendingAuthUrl.isBlank();}
     public boolean manualOnly(){return manualOnly;}
@@ -74,7 +94,7 @@ public final class SpotifyController {
         }catch(Throwable ex){status="Could not read clipboard; paste callback URL manually";}
     }
     public void refresh(){executor.execute(()->{
-        try{fetchPlayback();fetchDevices();status="Playback and devices updated";}
+        try{fetchProfile();fetchPlayback();fetchDevices();status="Playback and devices updated";}
         catch(Exception ex){status="Spotify: "+shortError(ex);}
     });}
     public String redirectUri(){return REDIRECT;}
@@ -178,7 +198,7 @@ public final class SpotifyController {
                 applyTokens(token);
                 status="Spotify connected. Open the Spotify app and play a song";
                 nextPollAllowed=0;
-                try{fetchDevices();}catch(Exception ignored){}
+                try{fetchProfile();fetchDevices();}catch(Exception ignored){}
                 MinecraftClient mc=MinecraftClient.getInstance();
                 if(mc!=null)mc.execute(LexySounds::success);
             }catch(Exception ex){if(generation==authGeneration.get())status="Spotify login failed: "+shortError(ex)+". Press LOGIN to retry";}
@@ -204,11 +224,20 @@ public final class SpotifyController {
         accessToken=o.get("access_token").getAsString();
         if(o.has("refresh_token"))refreshToken=o.get("refresh_token").getAsString();
         expireAt=System.currentTimeMillis()+o.get("expires_in").getAsLong()*1000L-60_000L;
+        if(!refreshToken.isBlank())SpotifySessionStore.save(clientId,refreshToken);
     }
     private synchronized String token() throws Exception {
+        if(refreshToken.isBlank() && accessToken.isBlank())throw new IOException("Spotify account not connected");
         if(System.currentTimeMillis()>=expireAt){
             if(refreshToken.isBlank())throw new IllegalStateException("Not connected");
-            applyTokens(tokenRequest("grant_type=refresh_token&refresh_token="+enc(refreshToken)+"&client_id="+enc(clientId)));
+            try{
+                applyTokens(tokenRequest("grant_type=refresh_token&refresh_token="+enc(refreshToken)+"&client_id="+enc(clientId)));
+            }catch(IOException ex){
+                if(ex.getMessage()!=null && (ex.getMessage().contains("400") || ex.getMessage().contains("401"))){
+                    status="Saved Spotify session expired or revoked. Disconnect and log in again.";
+                }
+                throw ex;
+            }
         }
         return accessToken;
     }
@@ -232,14 +261,29 @@ public final class SpotifyController {
         return r;
     }
     private static String get(JsonObject o,String key){return o!=null&&o.has(key)&&!o.get(key).isJsonNull()?o.get(key).getAsString():"";}
+    private void fetchProfile() throws Exception {
+        HttpResponse<String> r=request("GET","/me",null);
+        if(r.statusCode()==204 || r.body().isBlank())return;
+        JsonObject me=JsonParser.parseString(r.body()).getAsJsonObject();
+        String shown=get(me,"display_name");
+        profileName=shown.isBlank()?get(me,"id"):shown;
+    }
     private void fetchPlayback() throws Exception {
         HttpResponse<String> r=request("GET","/me/player",null);
-        if(r.statusCode()==204||r.body().isBlank()){playing="No active player - open Spotify on phone";paused=true;activeDevice="";return;}
+        if(r.statusCode()==204||r.body().isBlank()){playing="No active player - open Spotify on phone";paused=true;activeDevice="";progressMs=0;durationMs=0;return;}
         JsonObject o=JsonParser.parseString(r.body()).getAsJsonObject();
         paused=!o.has("is_playing")||!o.get("is_playing").getAsBoolean();
         JsonObject device=o.has("device")&&!o.get("device").isJsonNull()?o.getAsJsonObject("device"):null;
         activeDevice=get(device,"id");
+        volumePercent=device!=null && device.has("volume_percent") && !device.get("volume_percent").isJsonNull()
+            ?device.get("volume_percent").getAsInt():-1;
+        shuffleEnabled=o.has("shuffle_state") && o.get("shuffle_state").getAsBoolean();
+        repeatMode=get(o,"repeat_state");
+        progressMs=o.has("progress_ms")&&!o.get("progress_ms").isJsonNull()?o.get("progress_ms").getAsInt():0;
         JsonObject item=o.has("item")&&!o.get("item").isJsonNull()?o.getAsJsonObject("item"):null;
+        activeTrackId=get(item,"id");
+        durationMs=item!=null && item.has("duration_ms") && !item.get("duration_ms").isJsonNull()
+            ?item.get("duration_ms").getAsInt():0;
         String artist="";
         if(item!=null&&item.has("artists")&&item.getAsJsonArray("artists").size()>0)artist=get(item.getAsJsonArray("artists").get(0).getAsJsonObject(),"name");
         playing=item==null?"Nothing playing":get(item,"name")+(artist.isBlank()?"":" - "+artist);
@@ -252,6 +296,36 @@ public final class SpotifyController {
             JsonObject o=el.getAsJsonObject();list.add(new Device(get(o,"id"),get(o,"name"),get(o,"type"),o.get("is_active").getAsBoolean()));
         }
         devices=List.copyOf(list);
+    }
+    public void loadPlaylists(){executor.execute(()->{
+        try{
+            JsonObject root=JsonParser.parseString(request("GET","/me/playlists?limit=35",null).body()).getAsJsonObject();
+            ArrayList<Playlist> list=new ArrayList<>();
+            if(root.has("items") && root.get("items").isJsonArray())for(JsonElement el:root.getAsJsonArray("items")){
+                if(el.isJsonNull())continue;
+                JsonObject p=el.getAsJsonObject();
+                String uri=get(p,"uri"),id=get(p,"id");
+                if(uri.startsWith("spotify:playlist:") && !id.isBlank())list.add(new Playlist(get(p,"name"),id,uri));
+            }
+            playlists=List.copyOf(list);status="Loaded "+list.size()+" playlists";
+        }catch(Exception e){status="Playlists: "+shortError(e);}
+    });}
+    public void playPlaylist(Playlist playlist){
+        if(playlist!=null && playlist.uri().startsWith("spotify:playlist:"))
+            action("PUT","/me/player/play","{\"context_uri\":\""+playlist.uri()+"\"}","Playing "+playlist.name());
+    }
+    public void shuffle(){
+        boolean next=!shuffleEnabled;
+        action("PUT","/me/player/shuffle?state="+next,null,next?"Shuffle enabled":"Shuffle disabled");
+    }
+    public void repeat(){
+        String next="off".equals(repeatMode)?"context":"context".equals(repeatMode)?"track":"off";
+        action("PUT","/me/player/repeat?state="+enc(next),null,"Repeat: "+next);
+    }
+    public void changeVolume(int delta){
+        if(volumePercent<0){status="Volume unavailable: select an active Spotify device";return;}
+        int target=Math.max(0,Math.min(100,volumePercent+delta));
+        action("PUT","/me/player/volume?volume_percent="+target,null,"Volume: "+target+"%");
     }
     public void search(String search){
         if(search==null||search.isBlank())return;
@@ -303,6 +377,13 @@ public final class SpotifyController {
         }catch(Exception ex){status="Select phone: "+shortError(ex);}
     });}
     public void refreshDevices(){executor.submit(()->{try{fetchDevices();status="Devices updated";}catch(Exception ex){status="Devices: "+shortError(ex);}});}
-    public void disconnect(){cancelLogin();accessToken="";refreshToken="";expireAt=0;playing="Nothing playing";tracks=List.of();devices=List.of();status="Disconnected";}
-    public void shutdown(){disconnect();poller.shutdownNow();executor.shutdownNow();}
+    public void disconnect(){
+        cancelLogin();accessToken="";refreshToken="";expireAt=0;
+        SpotifySessionStore.delete();
+        playing="Nothing playing";profileName="";tracks=List.of();devices=List.of();playlists=List.of();status="Disconnected";
+    }
+    public void shutdown(){
+        // Gracefully close, but preserve the refresh token so Spotify stays linked after Minecraft restarts.
+        authGeneration.incrementAndGet();stopCallback();poller.shutdownNow();executor.shutdownNow();
+    }
 }

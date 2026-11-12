@@ -15,7 +15,8 @@ public final class LexyScreen extends Screen {
     private final boolean editor;
     private int tab, scroll=0, navScroll=0, selected=-1, dragDX=0, dragDY=0;
     private final Screen parent;
-    private boolean dragging=false, showDevices=false, totemSettingsOpen=false;
+    private boolean dragging=false, totemSettingsOpen=false;
+    private int spotifyView=0; // 0=tracks, 1=devices, 2=playlists
     private String query="";
     private TextFieldWidget search,spotifyClientId,spotifySearch,spotifyRedirect;
     private int panelX,panelY,panelW,panelH,sidebarW;
@@ -122,7 +123,7 @@ public final class LexyScreen extends Screen {
         rounded(c,panelX+16,panelY+13,39,39,0xFF0D1926);
         c.drawTexture(LexyClient.LOGO,panelX+17,panelY+14,37,37,0,0,256,256,256,256);
         label(c,"LexyClient",panelX+62,panelY+19,Math.max(35,sidebarW-66),WHITE);
-        label(c,"2.2  /  FABRIC",panelX+62,panelY+35,Math.max(36,sidebarW-68),MUTED);
+        label(c,"2.3  /  FABRIC",panelX+62,panelY+35,Math.max(36,sidebarW-68),MUTED);
         rect(c,panelX+16,panelY+62,sidebarW-27,1,OUTLINE);
         int count=navCapacity(); navScroll=Math.max(0,Math.min(navScroll,navLimit()));
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+count);i++){
@@ -252,45 +253,71 @@ public final class LexyScreen extends Screen {
             }
             return;
         }
-        label(c,"CONNECTED",rx+13,top+4,rw-240,0xFF91E1BC);
+        label(c,"CONNECTED"+(sp.profileName().isBlank()?"":"  /  "+sp.profileName()),rx+13,top+4,rw-240,0xFF91E1BC);
         rounded(c,rx+rw-206,top,99,24,SURFACE);
         label(c,"OPEN SPOTIFY",rx+rw-198,top+8,88,WHITE);
         rounded(c,rx+rw-102,top,92,24,0xFF333F4B);
-        label(c,"DISCONNECT",rx+rw-94,top+8,78,WHITE);
-        rounded(c,rx+10,top+31,rw-20,47,PANEL);
-        rect(c,rx+10,top+42,2,25,0xFF65B89A);
-        label(c,sp.playing(),rx+20,top+42,rw-40,WHITE);
-        label(c,sp.status(),rx+20,top+58,rw-40,MUTED);
-        rect(c,rx+rw-85,panelY+149,74,20,SURFACE);
+        label(c,"LOG OUT",rx+rw-94,top+8,78,WHITE);
+        rounded(c,rx+10,top+31,rw-20,54,PANEL);
+        rect(c,rx+10,top+39,2,38,0xFF65B89A);
+        label(c,sp.playing(),rx+20,top+40,rw-40,WHITE);
+        label(c,sp.status(),rx+20,top+56,rw-40,MUTED);
+        label(c,SpotifyController.timeString(sp.progressMs())+" / "+SpotifyController.timeString(sp.durationMs()),rx+20,top+69,rw-38,MUTED);
+        int trackX=rx+11, trackY=top+87, trackW=rw-22;
+        rect(c,trackX,trackY,trackW,3,SURFACE);
+        if(sp.durationMs()>0)rect(c,trackX,trackY,Math.min(trackW,Math.max(0,Math.round(trackW*(sp.progressMs()/(float)sp.durationMs())))),3,accent());
+        rounded(c,rx+rw-85,panelY+149,74,20,SURFACE);
         label(c,"SEARCH",rx+rw-75,panelY+156,60,WHITE);
         int by=panelY+180,bw=(rw-28)/5;
-        String[] actions={"PREV",sp.paused()?"PLAY":"PAUSE","NEXT","TRACKS","DEVICES"};
+        String[] transport={"PREV",sp.paused()?"PLAY":"PAUSE","NEXT","TRACKS","REFRESH"};
         for(int i=0;i<5;i++){
             int xx=rx+11+i*bw;
-            rounded(c,xx,by,bw-4,27,(i==4&&showDevices||i==3&&!showDevices)?0xFF2E5477:SURFACE);
-            label(c,actions[i],xx+5,by+9,bw-12,WHITE);
+            rounded(c,xx,by,bw-4,27,SURFACE);
+            label(c,transport[i],xx+6,by+9,bw-13,WHITE);
         }
-        int devicesY=panelY+215;
-        rounded(c,rx+11,devicesY,(rw-34)/2,25,0xFF2B4965);
-        label(c,"USE PHONE",rx+18,devicesY+8,(rw-34)/2-16,WHITE);
-        rounded(c,rx+17+(rw-34)/2,devicesY,(rw-34)/2+5,25,SURFACE);
-        label(c,"REFRESH DEVICES",rx+25+(rw-34)/2,devicesY+8,(rw-34)/2-12,WHITE);
-        int listY=panelY+249,listHeight=Math.max(22,panelY+panelH-30-listY);
+        int optionsY=panelY+214,optionsW=(rw-28)/5;
+        String[] options={sp.shuffleEnabled()?"SHUF ON":"SHUFFLE", "REPEAT "+sp.repeatMode().toUpperCase(Locale.ROOT),"VOL -","VOL +",sp.volumePercent()<0?"VOL --":sp.volumePercent()+"%"};
+        for(int i=0;i<5;i++){
+            int xx=rx+11+i*optionsW;
+            rounded(c,xx,optionsY,optionsW-4,25,(i<2&&((i==0&&sp.shuffleEnabled())||(i==1&&!sp.repeatMode().equals("off"))))?0xFF2D5272:SURFACE);
+            label(c,options[i],xx+5,optionsY+8,optionsW-11,WHITE);
+        }
+        int tabsY=panelY+248,tabW=(rw-28)/4;
+        String[] sources={"TRACKS","DEVICES","PLAYLISTS","USE PHONE"};
+        for(int i=0;i<4;i++){
+            int xx=rx+11+i*tabW;
+            rounded(c,xx,tabsY,tabW-4,25,i==spotifyView?0xFF2D5272:SURFACE);
+            label(c,sources[i],xx+6,tabsY+8,tabW-12,WHITE);
+        }
+        int listY=panelY+282,listHeight=Math.max(20,panelY+panelH-30-listY);
         clip(c,rx+10,listY,rx+rw-10,listY+listHeight);
-        if(showDevices){
+        if(spotifyView==1){
             List<SpotifyController.Device> list=sp.devices();
-            if(list.isEmpty())label(c,"Start a song in Spotify on your phone and refresh.",rx+17,listY+12,rw-35,MUTED);
-            for(int i=0;i<list.size()&&i*31<listHeight;i++){
-                var d=list.get(i);int y=listY+i*31;
+            if(list.isEmpty())label(c,"Play music in Spotify, then tap REFRESH.",rx+17,listY+12,rw-35,MUTED);
+            int count=Math.max(1,listHeight/31);
+            scroll=Math.max(0,Math.min(scroll,Math.max(0,list.size()-count)));
+            for(int i=0;i<count&&i+scroll<list.size();i++){
+                var d=list.get(i+scroll);int y=listY+i*31;
                 rounded(c,rx+11,y,rw-22,28,PANEL);
-                label(c,(d.active()?"ACTIVE  ·  ":"")+d.name()+" / "+d.type(),rx+20,y+10,rw-42,WHITE);
+                label(c,(d.active()?"ACTIVE  /  ":"")+d.name()+" · "+d.type(),rx+20,y+10,rw-42,WHITE);
             }
-        } else {
+        }else if(spotifyView==2){
+            List<SpotifyController.Playlist> list=sp.playlists();
+            if(list.isEmpty())label(c,"No playlists yet. Tap PLAYLISTS to reload.",rx+17,listY+12,rw-35,MUTED);
+            int count=Math.max(1,listHeight/32);
+            scroll=Math.max(0,Math.min(scroll,Math.max(0,list.size()-count)));
+            for(int i=0;i<count&&i+scroll<list.size();i++){
+                var pl=list.get(i+scroll);int y=listY+i*32;
+                rounded(c,rx+11,y,rw-22,29,PANEL);
+                label(c,pl.name(),rx+19,y+11,rw-90,WHITE);
+                rounded(c,rx+rw-65,y+4,54,21,SURFACE);label(c,"PLAY",rx+rw-54,y+11,40,WHITE);
+            }
+        }else{
             List<SpotifyController.Track> list=sp.tracks();
-            if(list.isEmpty())label(c,"Search a song above, or start music in Spotify.",rx+17,listY+12,rw-35,MUTED);
-            int visible=Math.max(1,listHeight/32);
-            scroll=Math.max(0,Math.min(scroll,Math.max(0,list.size()-visible)));
-            for(int i=0;i<visible&&i+scroll<list.size();i++){
+            if(list.isEmpty())label(c,"Search tracks or open one of your playlists.",rx+17,listY+12,rw-35,MUTED);
+            int count=Math.max(1,listHeight/32);
+            scroll=Math.max(0,Math.min(scroll,Math.max(0,list.size()-count)));
+            for(int i=0;i<count&&i+scroll<list.size();i++){
                 var t=list.get(i+scroll);int y=listY+i*32;
                 rounded(c,rx+11,y,rw-22,29,PANEL);
                 label(c,t.title()+"  ·  "+t.artist(),rx+19,y+11,rw-94,WHITE);
@@ -512,24 +539,39 @@ public final class LexyScreen extends Screen {
             if(inside(mx,my,rx+rw-206,top,99,24)){spotify.openPlayer();return true;}
             if(inside(mx,my,rx+rw-102,top,92,24)){spotify.disconnect();LexySounds.deny();return true;}
             if(inside(mx,my,rx+rw-85,panelY+149,74,20)){
-                spotify.search(spotifySearch.getText());scroll=0;showDevices=false;return true;
+                spotify.search(spotifySearch.getText());scroll=0;spotifyView=0;return true;
             }
             int by=panelY+180,bw=(rw-28)/5;
             for(int i=0;i<5;i++)if(inside(mx,my,rx+11+i*bw,by,bw-4,27)){
-                switch(i){case 0->spotify.previous();case 1->spotify.toggle();case 2->spotify.next();
-                    case 3->{showDevices=false;scroll=0;}case 4->{showDevices=true;scroll=0;}}
+                switch(i){
+                    case 0->spotify.previous();case 1->spotify.toggle();case 2->spotify.next();
+                    case 3->{spotifyView=0;scroll=0;}
+                    case 4->spotify.refresh();
+                }
                 return true;
             }
-            int devicesY=panelY+215;
-            if(inside(mx,my,rx+11,devicesY,(rw-34)/2,25)){spotify.usePhone();return true;}
-            if(inside(mx,my,rx+17+(rw-34)/2,devicesY,(rw-34)/2+5,25)){spotify.refreshDevices();return true;}
-            int listY=panelY+249,listHeight=Math.max(22,panelY+panelH-30-listY);
+            int optionsY=panelY+214,optionsW=(rw-28)/5;
+            for(int i=0;i<5;i++)if(inside(mx,my,rx+11+i*optionsW,optionsY,optionsW-4,25)){
+                switch(i){case 0->spotify.shuffle();case 1->spotify.repeat();case 2->spotify.changeVolume(-10);case 3->spotify.changeVolume(10);case 4->spotify.refresh();}
+                return true;
+            }
+            int tabsY=panelY+248,tabW=(rw-28)/4;
+            for(int i=0;i<4;i++)if(inside(mx,my,rx+11+i*tabW,tabsY,tabW-4,25)){
+                if(i==3)spotify.usePhone();
+                else{spotifyView=i;scroll=0;if(i==1)spotify.refreshDevices();else if(i==2)spotify.loadPlaylists();}
+                return true;
+            }
+            int listY=panelY+282,listHeight=Math.max(20,panelY+panelH-30-listY);
             if(inside(mx,my,rx+11,listY,rw-22,listHeight)){
-                int row=(int)(my-listY)/(showDevices?31:32);
-                if(showDevices){var devices=spotify.devices();if(row>=0&&row<devices.size())spotify.transfer(devices.get(row));}
-                else {var tracks=spotify.tracks();if(row>=0&&row+scroll<tracks.size()){
-                    var track=tracks.get(row+scroll);if(mx>=rx+rw-38)spotify.queue(track);else spotify.play(track);
-                }}return true;
+                int row=(int)(my-listY)/(spotifyView==1?31:32),idx=row+scroll;
+                if(row>=0){
+                    if(spotifyView==1){var ds=spotify.devices();if(idx<ds.size())spotify.transfer(ds.get(idx));}
+                    else if(spotifyView==2){var ps=spotify.playlists();if(idx<ps.size())spotify.playPlaylist(ps.get(idx));}
+                    else {var ts=spotify.tracks();if(idx<ts.size()){
+                        var t=ts.get(idx);if(mx>=rx+rw-38)spotify.queue(t);else spotify.play(t);
+                    }}
+                }
+                return true;
             }
         }else if(tab==8){
             LocalMusicPlayer player=LocalMusicPlayer.INSTANCE;
@@ -650,7 +692,11 @@ public final class LexyScreen extends Screen {
             int max=0;
             if(modular())max=maxScroll(filtered().size());
             else if(tab==5||tab==6)max=Math.max(0,OptimizationManager.OPTIONS.size()-Math.max(1,(panelY+panelH-35-(panelY+115))/48));
-            else if(tab==7)max=Math.max(0,(showDevices?SpotifyController.INSTANCE.devices().size():SpotifyController.INSTANCE.tracks().size())-Math.max(1,(panelY+panelH-30-(panelY+249))/(showDevices?31:32)));
+            else if(tab==7){
+                SpotifyController sp=SpotifyController.INSTANCE;
+                int count=spotifyView==1?sp.devices().size():spotifyView==2?sp.playlists().size():sp.tracks().size();
+                max=Math.max(0,count-Math.max(1,(panelY+panelH-30-(panelY+282))/(spotifyView==1?31:32)));
+            }
             else if(tab==8)max=Math.max(0,LocalMusicPlayer.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+248))/31));
             else if(tab==9)max=Math.max(0,17-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
             else if(tab==10)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+149))/48)):0;
