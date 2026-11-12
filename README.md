@@ -1,31 +1,21 @@
-# LexyClient 4.0 — Ultimate Edition
+# LexyClient 4.1 — Studio
 
-Minecraft 1.20.1 / Fabric / Java 17. A client-side mod with an original Lunar/Feather-inspired layout.
+A Fabric 1.20.1 client-side mod (Java 17). Lexy 4.1 focuses on a considered module center, responsive title, visual consistency, genuine configuration controls and lower per-frame UI overhead.
 
-## Install
-Put `lexy-client-4.0.0.jar` in the **active instance** `mods/` directory alongside Fabric API. Remove older LexyClient JAR files. Use Fabric 1.20.1, not Forge.
+## Installation
 
-**Windows:** `%APPDATA%\.minecraft\mods` is only the default path. Launchers may use different instance folders.
+Use Fabric Loader + Fabric API and place only `lexy-client-4.1.0.jar` in the selected Minecraft installation's `mods` directory. Use RSHIFT, F8, `/lexy` in-game, or the Lexy title/pause entry point. If the UI does not appear, check whether the game log actually lists `lexy-client 4.1.0` as loaded.
 
-**Amethyst (Android):** identify the active `.minecraft` directory in the launcher settings. One example observed in the user's previous log was `/storage/emulated/0/Android/data/git.artdeell.mjlaunch/files/.minecraft/mods/`. Android permissions and profiles may change this; use the actual game directory.
+## What's new
 
-If the `latest.log` `Loading ... mods:` section does not list `lexy-client 4.0.0`, Fabric **did not discover the file**. Changing keybinds or GUIs cannot fix that.
+- The title is an original dark atmospheric backdrop, with actual navigation into Minecraft's world list, multiplayer, Realms (vanilla fallback), options and Lexy config.
+- A redesigned, Lunar/Feather-inspired but distinct visual system: large pictogram module cards, searchable categories, favorites, clear action states, advanced settings drawer and accessible compact layouts.
+- 32 hand-drawn original vector icons packaged as a single atlas, a rebuilt Lexy mark, seven persisted themes, and a functional profile save/load/delete flow.
+- Cached filtered module lists and settings rows; the GUI does not load images from disk every frame.
+- Existing functional AutoTotem, TriggerBot, AutoClicker, Aim Assist, music, HUD, and optimization logic is retained, as is the legacy advanced settings interface.
 
-## Controls
-- Right Shift: open / close modules
-- F8: backup menu
-- `/lexy`: open in-world (and `/lexy status` to check mod load)
-- Title screen and pause menu: Lexy button
-- Menu: 12 categories; HUD editor; Settings; Profiles; search and favorites
-- `ESC`: return to previous screen
-- On custom title screen, `ESC` opens vanilla title for recovery.
+Read `LEEME_ES.md` and `RELEASE_NOTES.md` for details. This is not a substitute for gameplay testing on a target device and there are no fabricated FPS benchmarks.
 
-## Functionality
-Four combat modules from Lexy 3.0, configurable macros, full-size HUD, waypoints, AutoSprint, AutoWalk, AutoTool, AutoRespawn, ToggleSneak, alerts, zoom, native video presets, adaptive frame-rate target, 7 themes, profile snapshots and optional local audio/Spotify API.
+## Validation
 
-Profile snapshots live in `.minecraft/config/lexy-profiles/` and UI settings in `.minecraft/config/lexy-ui-v4.json`. Existing 3.0 settings remain in `lexy-client.json`.
-
-Spotify's official API restricts in-game streaming and remote playback; local MP3 playback requires no premium account.
-
-## Verification
-Build with `gradle build` using the GitHub CI workflow. Headless startup smoke testing is supplemental; it cannot confirm mouse interactions, Pojav rendering or server gameplay. Do not mistake a successful compile for a complete functional test.
+`gradle build` and `gradle runClient` under Xvfb are checked using GitHub Actions. If Minecraft does not recognize the mod, `latest.log` is the authoritative diagnostic.

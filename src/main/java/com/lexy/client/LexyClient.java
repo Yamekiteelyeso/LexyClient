@@ -207,7 +207,7 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();
- System.out.println("[LexyClient 4.0.0] Client entrypoint invoked. Fabric loaded LexyClient.");
+ System.out.println("[LexyClient 4.1.0] Client entrypoint invoked. Fabric loaded LexyClient.");
  TitleBranding.register();LexyCommands.register();
  try{LexySounds.init();}catch(Exception ex){System.err.println("[LexyClient] Audio registration unavailable: "+ex);}
  sessionStart=System.currentTimeMillis();register();LexyKeybinds.init();load();LexyTheme.load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("key.lexyclient.menu",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"key.categories.lexyclient"));
@@ -222,7 +222,7 @@ public final class LexyClient implements ClientModInitializer {
   else if(client.currentScreen instanceof LexyScreen current)current.close();
   else if(client.currentScreen==null)client.setScreen(new LexyModernScreen(null));
  }while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));LexyKeybinds.tick(client);LexyTools.tick(client);LexyExtras.tick(client);AutoTotem.tick(client);AimAssist.tick(client);AutoClicker.tick(client);TriggerBot.tick(client);OptimizationManager.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();welcomeShown=false;return;}
- if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§bLEXY 4.0 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 4.0.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
+ if(!welcomeShown){welcomeShown=true;client.player.sendMessage(Text.literal("§bLEXY 4.1 §7loaded · RShift / F8 / /lexy"),true);System.out.println("[LexyClient 4.1.0] In-world HUD and key bindings ready.");}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;
  if(lastHealth>lowHealthThreshold && client.player.getHealth()<=lowHealthThreshold)LexySounds.notifySound();
  lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
@@ -240,7 +240,7 @@ public final class LexyClient implements ClientModInitializer {
     int x=Math.max(4,sw-168);
     context.fill(x,y,sw-5,y+19,0xD90F1C2C);
     context.fill(x,y,x+3,y+19,accent());
-    context.drawTextWithShadow(mc.textRenderer,"LEXY 4.0  |  RSHIFT / F8",x+10,y+6,0xFFC5E4FF);
+    context.drawTextWithShadow(mc.textRenderer,"LEXY 4.1  |  RSHIFT / F8",x+10,y+6,0xFFC5E4FF);
   }
  });
  net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();LexyKeybinds.save();ZoomController.reset(client);LexyTools.shutdown(client);LexyExtras.shutdown(client);LexyTheme.save();});

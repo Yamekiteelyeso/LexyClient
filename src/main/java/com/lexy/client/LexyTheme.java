@@ -95,5 +95,15 @@ public final class LexyTheme {
             return true;
         }catch(Exception ex){System.err.println("[Lexy] Load profile failed: "+ex);return false;}
     }
+    /** Delete one locally stored profile; never touches the active client configuration. */
+    public static boolean deleteProfile(String name){
+        name=safeName(name);
+        if(name.isEmpty())return false;
+        try{
+            boolean deleted=Files.deleteIfExists(PROFILES.resolve(name+".json"));
+            if(deleted&&activeProfile.equals(name)){activeProfile="Default";save();}
+            return deleted;
+        }catch(IOException ex){System.err.println("[Lexy] Profile deletion failed: "+ex.getMessage());return false;}
+    }
     public static void resetUi(){index=0;animate=true;dimBackground=true;showTooltips=true;save();}
 }

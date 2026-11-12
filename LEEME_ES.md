@@ -1,18 +1,26 @@
-# LexyClient 4.0 Ultimate
+# LexyClient 4.1 — Studio UI Rework
 
-### Instalar
-Usa **Minecraft Java 1.20.1 / Fabric / Java 17** y Fabric API. Copia el `.jar` de LexyClient a `mods` de **la instancia que ejecutas** y borra el JAR anterior.
+## Instalación
 
-En Amethyst/Android no siempre corresponde la carpeta de Windows. Confirma desde el launcher la ubicación real de `.minecraft`. Tu antiguo `latest.log` no listaba `lexy-client`, por lo tanto el mod ni siquiera se había cargado.
+1. Usa **Minecraft Java 1.20.1** con **Fabric Loader**, **Fabric API** y **Java 17**.
+2. Quita versiones anteriores de LexyClient de la carpeta `mods` del perfil que ejecutas.
+3. Copia **solo** `lexy-client-4.1.0.jar` en `mods` (no el archivo ZIP).
+4. En Amethyst/Pojav debes elegir la carpeta `mods` del lanzador real, que puede ser distinta de la de Windows.
+5. Abre el juego y verifica que en `logs/latest.log` aparezca `lexy-client 4.1.0`.
 
-**Comprobar:** abre `latest.log`, busca `lexy-client 4.0.0` dentro de `Loading ... mods` y la línea `[LexyClient 4.0.0] Client entrypoint invoked`.
+## Accesos
 
-### Abrir
-Shift derecho o F8, botón del título y pausa, `/lexy` dentro del mundo. `/lexy status` confirma si está cargado. ESC regresa. El menú nuevo permite regresar al título vanilla.
+- **Shift derecho** o **F8**: abre/cierra el centro de módulos.
+- **/lexy**: menú del cliente dentro de un mundo (sin necesidad de teclas).
+- Desde el menú principal personalizado: **LEXY MODULES**, **LEXY SETTINGS** y **PROFILES**.
+- **VANILLA**: vuelve a la pantalla original de Minecraft si necesitas recuperar el menú.
 
-### Mejoras
-Menú principal nuevo, 12 categorías, iconos, búsqueda, filtros, favoritos, panel de ajustes, 7 temas, perfiles guardados, AutoTool, AutoWalk, AutoRespawn, ToggleSneak, AutoJump vanilla, alertas, waypoint, opciones gráficas y HUD.
+## Diseño y controles
 
-Las opciones avanzadas de AutoTotem, TriggerBot, AimAssist y AutoClicker existentes siguen disponibles desde las tarjetas.
+La 4.1 usa fondos oscuros azul/gris, iconos originales, módulos en tarjetas, búsqueda, favoritos, temas y panel de configuración lateral. Pulsa **la tarjeta o el engranaje** para ver sus opciones; pulsa el botón **ENABLED/DISABLED** para activarla o desactivarla. En opciones de vídeo (como FPS Limit) el botón se muestra como **OPEN / APPLY**, no como un módulo permanente.
 
-**No se promete 100 % de funcionamiento en todos los launchers sin un test dentro del juego.** Si el mod aparece en el log pero no abre, manda `latest.log` y la información del perfil.
+**ESC** primero cierra el panel lateral. En **Profiles** puedes guardar, cargar y borrar (doble confirmación) un perfil local.
+
+## Estado de prueba
+
+La compilación de Java y la carga del inicializador Fabric se verifican mediante GitHub Actions. Las pruebas de clics y escala dentro de tu instalación de Amethyst/PC siguen siendo necesarias. No se han creado cheats de relleno ni se prometen ganancias de FPS sin medir.

@@ -183,7 +183,7 @@ public final class LexyScreen extends Screen {
                 rounded(c,panelX+10,yy,sidebarW-17,29,blend(0xFF111D2B,BG_HOVER,navHover[i]));
             }
             rounded(c,panelX+16,yy+2,29,26,active?0xFF2D6799:0xFF203146);
-            c.drawTexture(LexyClient.ICON_ATLAS,panelX+19,yy+3,24,24,(i%4)*32,(i/4)*32,32,32,128,128);
+            c.drawTexture(LexyClient.ICON_ATLAS,panelX+19,yy+3,24,24,(i%8)*32,(i/8)*32,32,32,256,128);
             String title=sidebarW<150?switch(i){case 0->"Modules";case 3->"Stats";case 5->"Video";case 6->"FPS Tuning";case 8->"Music";default->TABS[i];}:TABS[i];
             label(c,title,panelX+50,yy+10,sidebarW-61,active?WHITE:MUTED);
         }
@@ -716,7 +716,7 @@ public final class LexyScreen extends Screen {
     private void renderTools(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=contentY();
         rounded(c,x,top,w,56,PANEL);frame(c,x,top,w,56,OUTLINE);
-        c.drawTexture(LexyClient.ICON_ATLAS,x+9,top+10,32,32,0,32,32,32,128,128);
+        c.drawTexture(LexyClient.ICON_ATLAS,x+9,top+10,32,32,0,32,32,32,256,128);
         label(c,"QUICK ACTIONS   /   LEXY TOOLS",x+48,top+9,w-60,WHITE);
         label(c,""+LexyTools.fps(client)+" FPS   |   "+LexyTools.server(client),x+48,top+29,w-60,MUTED);
         scroll=Math.max(0,Math.min(scroll,toolScrollMax()));
@@ -730,7 +730,7 @@ public final class LexyScreen extends Screen {
             rounded(c,xx,yy,cellW-6,step-5,selected?BG_HOVER:PANEL);
             frame(c,xx,yy,cellW-6,step-5,selected?accent():OUTLINE);
             int icon= switch(i){case 0->2;case 1->6;case 2->5;case 3->0;case 4->2;case 5->6;case 6->9;default->14;};
-            c.drawTexture(LexyClient.ICON_ATLAS,xx+8,yy+7,25,25,(icon%4)*32,(icon/4)*32,32,32,128,128);
+            c.drawTexture(LexyClient.ICON_ATLAS,xx+8,yy+7,25,25,(icon%8)*32,(icon/8)*32,32,32,256,128);
             label(c,TOOL_LABELS[i],xx+39,yy+9,cellW-52,WHITE);
             label(c,TOOL_DESCRIPTIONS[i],xx+39,yy+27,cellW-52,MUTED);
             if(i==1||i==2||i==3){boolean on=i==1?LexyTools.autoSprint:i==2?LexyTools.fullbright:LexyTools.watermark;

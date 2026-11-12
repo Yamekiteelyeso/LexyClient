@@ -3,7 +3,7 @@
   "id": "lexy-client",
   "version": "${version}",
   "name": "LexyClient",
-  "description": "LexyClient 4.0 original module hub, safe title screen, profiles, themes, real gameplay utilities and optimization.",
+  "description": "LexyClient 4.1 Studio UI rework: original dark module dashboard, profiles, themes and real game utilities.",
   "environment": "client",
   "entrypoints": {
     "client": [
@@ -16,5 +16,5 @@
     "java": ">=17",
     "fabric-api": "*"
   },
-  "icon": "assets/lexy-client/icon.png"
+  "icon": "assets/lexy-client/textures/gui/logo.png"
 }

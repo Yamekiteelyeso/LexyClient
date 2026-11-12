@@ -1,16 +1,23 @@
-# LexyClient 4.0.0 — Ultimate UI & Reliability
+# LexyClient 4.1 — Studio UI Rework
 
-## Implemented
-- New original 12-category module interface with responsive 1/2/3-column cards, icon atlas, favorite filter, search, module-specific settings and themes.
-- New title UI with Singleplayer, Multiplayer, Realms (vanilla API), Mods, Lexy Settings, Profiles, Minecraft Options and Quit; vanilla fallback remains accessible.
-- RShift, F8, `/lexy` and pause/title controls access the same modern menu.
-- Seven styles, UI sound and animation controls, local profile save/load with JSON validation and atomic disk writes.
-- AutoTool, AutoWalk, ToggleSneak, AutoRespawn, alerts, waypoints, native AutoJump, four existing combat modules, Zoom, local music integration and real vanilla graphics settings.
-- Expanded Optimization with over 20 directly adjustable vanilla performance options, four presets and conservative adaptive view-distance controls.
-- Preserves the existing Combat advanced settings, Keybinds/Macros, HUD editor and Spotify integration through reachable legacy detail screens.
-- Displays module version at startup in logs and in-game for troubleshooting.
+This release addresses visual quality and navigation rather than claiming a complete new cheat engine.
 
-## Not implemented / limitations
-- No extended-reach packet spoofing, fly bypass, server-forced velocity, or unlocked Spotify catalog playback without Premium.
-- No claims of measured FPS increase until tested against a baseline on the same hardware.
-- Full GUI clickthrough requires real-device testing. If Fabric's mod listing omits `lexy-client`, installation path must be fixed; code cannot load a JAR that the launcher did not discover.
+## Actually implemented
+
+- New original, dark slate interface with a consistent type hierarchy, 32 hand-drawn vector icons, centered module illustrations, and clear enabled/disabled/open states.
+- Settings appear in a right-side drawer; the catalog stays visible behind them. Escape closes the drawer before leaving the menu.
+- Real category navigation, favorites, search, activation controls, contextual module configuration, keyboard shortcuts and scrolling.
+- Redesigned title screen with an original Minecraft-inspired backdrop and direct actions for singleplayer, multiplayer, Realms (or vanilla fallback), Lexy modules, profiles, options and exit.
+- Seven persisted theme palettes; saved profiles can now be deleted using a two-click confirmation and existing profiles still load as before.
+- Fixed dashboard shortcut hitboxes and skipped clicks on catalog cards outside the clipped viewport.
+- Performance: cache filtered module lists, settings arrays, and the profiles list rather than rebuilding during every render frame. Icons are packed into one atlas.
+- Compact-screen support with collapsed side rail and touch-friendly paging; vanilla title can always be recovered.
+- All existing combat, music, HUD, zoom, macros and performance features remain in the project.
+
+## Limits / tests
+
+- Fabric Gradle compilation and an actual Minecraft client-entrypoint smoke test run through GitHub Actions. These are not equivalents of verifying every mouse/touch interaction.
+- The legacy advanced configuration screen remains accessible from relevant modules. It has not been fully redesigned.
+- The render backdrop is a precomputed texture; no expensive post-processing blur/shaders are added.
+- No claimed FPS percentage. Existing module behavior on multiplayer servers is not guaranteed or bypassing server validation.
+- Compatible with Minecraft Java 1.20.1 + Fabric API. Load the correct `mods` folder for the selected launcher/profile.

@@ -1,10 +1,8 @@
-LEXY CLIENT 4.0 ULTIMATE — Fabric 1.20.1 / Java 17
+LEXYCLIENT 4.1 STUDIO
+Fabric Loader + Fabric API / Minecraft Java 1.20.1 / Java 17
 
-1. Cierra Minecraft.
-2. Borra LexyClient 3.x / 2.x de la carpeta mods de la instancia ACTIVA.
-3. Pon lexy-client-4.0.0.jar en mods junto a Fabric API.
-4. Arranca Minecraft con Fabric 1.20.1.
-5. Busca lexy-client 4.0.0 en el log y prueba RSHIFT, F8 o /lexy.
-
-Android/Amethyst: busca la carpeta de juego de tu perfil, no la carpeta de Windows.
-Si el JAR NO sale en Loading ... mods:, está en la ruta equivocada.
+Install the .jar only (not this zip). Remove any earlier LexyClient jars.
+Amethyst/Pojav users: place the jar in the active launcher's .minecraft/mods folder.
+In the Minecraft log check: lexy-client 4.1.0
+Access menu: RIGHT SHIFT, F8, or /lexy (in world).
+Title screen: use VANILLA to return to the original Minecraft menu.

@@ -133,6 +133,45 @@ public final class LexyModuleCatalog {
         }
         return s;
     }
+    /** One specific pictogram per common module; otherwise the category glyph. */
+    public static int iconIndex(Entry e){
+        return switch(e.name()){
+            case "AutoTotem" -> 12;
+            case "TriggerBot", "AimAssist" -> 14;
+            case "AutoClicker" -> 13;
+            case "Zoom" -> 16;
+            case "AutoSprint", "AutoWalk", "ToggleSneak", "AutoJump" -> 2;
+            case "AutoTool" -> 7;
+            case "AutoRespawn" -> 30;
+            case "Low Health Alert" -> 25;
+            case "Durability Alert" -> 12;
+            case "Waypoint HUD", "Save Waypoint" -> 20;
+            case "Copy Coordinates" -> 29;
+            case "Custom Main Menu" -> 23;
+            case "FPS Limit", "Adaptive FPS", "Adaptive FPS Target", "Low Graphics", "Balanced Graphics", "Quality Graphics" -> 6;
+            case "Fullbright", "Brightness" -> 25;
+            case "HUD Editor", "Custom HUD Layout" -> 5;
+            case "Keys & Macros" -> 21;
+            case "Reset UI Scale" -> 30;
+            case "Local Music", "Spotify Integration", "UI Sounds" -> 8;
+            case "Theme Picker" -> 9;
+            case "HUD Opacity" -> 4;
+            default -> switch(e.category()){
+                case "Dashboard" -> 0;
+                case "Combat" -> 1;
+                case "Movement" -> 2;
+                case "Player" -> 3;
+                case "Render" -> 4;
+                case "HUD" -> 5;
+                case "Optimization" -> 6;
+                case "Utilities" -> 7;
+                case "Music" -> 8;
+                case "Cosmetics" -> 9;
+                case "Profiles" -> 10;
+                default -> 11;
+            };
+        };
+    }
     public static boolean isAction(Entry e){
         String n=e.name();
         return e.category().equals("Optimization")&&!n.equals("Adaptive FPS")
