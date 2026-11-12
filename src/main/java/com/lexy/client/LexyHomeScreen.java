@@ -9,135 +9,110 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
-/** Lexy Studio title: original backdrop, keyboard/touch navigation and a vanilla escape hatch. */
+/** Lightweight monochrome title. All controls map to real Minecraft or Lexy screens. */
 public final class LexyHomeScreen extends Screen {
     private static final Identifier BACKDROP=new Identifier("lexy-client","textures/gui/backdrop.png");
-    private static final String[] ITEMS={"SINGLEPLAYER","MULTIPLAYER","MINECRAFT REALMS","MOD MANAGER","LEXY SETTINGS","PROFILES","MINECRAFT OPTIONS","QUIT GAME"};
-    private static final int[] ICONS={19,11,23,0,15,10,11,30};
+    private static final String[] MAIN={"SINGLEPLAYER","MULTIPLAYER","MINECRAFT REALMS","LEXY SETTINGS","QUIT GAME"};
+    private static final int[] MAIN_ICONS={19,11,23,0,30};
+    private static final String[] TOOLS={"MODULES","PROFILES","OPTIONS","VANILLA"};
+    private static final int[] TOOL_ICONS={5,10,11,30};
     private final Screen vanilla;
-    private int panelX,panelY,panelW,firstY,buttonH,gap,visible,scroll;
-    public LexyHomeScreen(Screen parent){super(Text.literal("LexyClient Studio"));vanilla=parent;}
+    private int left,mainTop,buttonW,buttonH,step,toolsTop,toolW;
+    public LexyHomeScreen(Screen parent){super(Text.literal("LexyClient"));vanilla=parent;}
     @Override protected void init(){
-        panelW=Math.min(410,Math.max(170,width-24));panelX=(width-panelW)/2;
-        int top=Math.max(12,height/12),header=height<330?58:91;
-        panelY=top;firstY=top+header;
-        buttonH=Math.max(24,Math.min(38,height/17));gap=Math.max(5,Math.min(9,buttonH/5));
-        visible=Math.max(1,(height-firstY-42)/(buttonH+gap));
-        scroll=Math.max(0,Math.min(scroll,ITEMS.length-visible));
+        buttonW=Math.min(300,Math.max(145,width-30));left=(width-buttonW)/2;
+        buttonH=height>=420?31:height>=300?26:20;
+        step=buttonH+(height>=340?7:4);
+        int blockH=(MAIN.length-1)*step+buttonH;
+        boolean footer=height>=240;
+        int ideal=height>=340?(height-blockH)/2+18:height>=230?69:43;
+        mainTop=Math.max(height>=230?68:38,Math.min(ideal,height-(footer?76:20)-blockH));
+        toolsTop=height-42;
+        toolW=Math.max(29,(buttonW-12)/TOOLS.length);
         System.out.println("[LexyClient 4.2.0] Mono title screen initialized "+width+"x"+height);
     }
-    private int buttonY(int index){return firstY+(index-scroll)*(buttonH+gap);}
-    private void button(DrawContext c,int index,int mx,int my){
-        var p=LexyTheme.palette();
-        int y=buttonY(index),x=panelX,w=panelW;
-        boolean hovered=LexyPaint.hit(mx,my,x,y,w,buttonH);
-        int color=index==0?p.accentSoft():index==7?0xFF252525:0xC91E1E1E;
-        int edge=index==0?p.accent():hovered?p.accent():0xFF484848;
-        LexyPaint.rounded(c,x,y,w,buttonH,hovered?LexyPaint.mix(color,p.accentSoft(),.46):color);
-        LexyPaint.border(c,x,y,w,buttonH,edge);
-        LexyPaint.icon(c,ICONS[index],x+15,y+(buttonH-19)/2,19);
-        LexyPaint.label(c,ITEMS[index],x+42,y+(buttonH-8)/2,w-86,LexyPaint.WHITE);
-        LexyPaint.label(c,"›",x+w-21,y+(buttonH-8)/2,12,hovered?p.accent():LexyPaint.MUTED);
+    private int mainY(int idx){return mainTop+idx*step;}
+    private void menuButton(DrawContext c,int idx,int mx,int my){
+        int y=mainY(idx),h=buttonH;
+        boolean hover=LexyPaint.hit(mx,my,left,y,buttonW,h);
+        int bg=hover?0xF0303030:0xE8171718,edge=hover?0xFF777777:0xFF454545;
+        LexyPaint.rounded(c,left,y,buttonW,h,bg);
+        LexyPaint.border(c,left,y,buttonW,h,edge);
+        int icon=Math.min(h-8,17),iy=y+(h-icon)/2;
+        LexyPaint.icon(c,MAIN_ICONS[idx],left+14,iy,icon);
+        LexyPaint.label(c,MAIN[idx],left+40,y+(h-8)/2,buttonW-65,0xFFE6E6E6);
+        if(buttonW>=205)LexyPaint.label(c,"›",left+buttonW-19,y+(h-8)/2,12,hover?0xFFF2F2F2:0xFF737373);
     }
-    @Override public void render(DrawContext c,int mx,int my,float delta){
-        var p=LexyTheme.palette();
+    private void secondary(DrawContext c,int index,int mx,int my){
+        int x=left+index*(toolW+4),y=toolsTop;
+        boolean hover=LexyPaint.hit(mx,my,x,y,toolW,22);
+        LexyPaint.rounded(c,x,y,toolW,22,hover?0xE7353535:0xCC151515);
+        LexyPaint.border(c,x,y,toolW,22,hover?0xFF777777:0xFF393939);
+        if(toolW>=72){
+            LexyPaint.icon(c,TOOL_ICONS[index],x+5,y+5,12);
+            LexyPaint.label(c,TOOLS[index],x+20,y+7,toolW-25,0xFFBEBEBE);
+        }else{
+            LexyPaint.icon(c,TOOL_ICONS[index],x+(toolW-14)/2,y+4,14);
+        }
+    }
+    @Override public void render(DrawContext c,int mx,int my,float dt){
         c.drawTexture(BACKDROP,0,0,width,height,0,0,1600,900,1600,900);
-        c.fillGradient(0,0,width,height,0x28080808,0x8F080808);
-        // Anchored top header: logo + non-decorative shortcuts.
-        LexyPaint.rounded(c,12,10,40,40,0xA8141414);
-        c.drawTexture(LexyClient.LOGO,16,14,32,32,0,0,256,256,256,256);
-        if(width>310){
-            LexyPaint.title(c,"LEXY",59,17,1.5f,LexyPaint.WHITE);
-            LexyPaint.label(c,"MONO EDITION",59,34,142,p.accent());
+        c.fillGradient(0,0,width,height,0x74000000,0xBA080808);
+        c.fill(0,0,width,38,0xAE080808);
+        c.fill(0,37,width,38,0xFF303030);
+        LexyPaint.label(c,"LEXY",12,13,80,0xFFEDEDED);
+        LexyPaint.label(c,"/  CLIENT 4.2",53,13,114,0xFF8B8B8B);
+        if(width>=325)LexyPaint.label(c,"RSHIFT  /  F8",width-102,13,98,0xFF979797);
+        int markSize=height>=340?40:26;
+        int titleY=Math.max(39,mainTop-markSize-14);
+        int titleX=left+Math.max(0,buttonW/2-81);
+        if(height>=230){
+            c.drawTexture(LexyClient.LOGO,titleX,titleY,markSize,markSize,0,0,256,256,256,256);
+            LexyPaint.title(c,"LEXY CLIENT",titleX+markSize+7,titleY+Math.max(5,(markSize-17)/2),1.2f,0xFFEEEEEE);
         }
-        if(width>=590){
-            String[] nav={"MODULES","SETTINGS","VANILLA"};
-            for(int i=0;i<nav.length;i++){
-                int x=width-297+i*97;
-                LexyPaint.button(c,nav[i],x,16,91,27,0xC5252525,p.border(),LexyPaint.WHITE,
-                        LexyPaint.hit(mx,my,x,16,91,27));
-            }
-        }else{
-            LexyPaint.button(c,"VANILLA",width-92,16,80,25,0xC5252525,p.border(),LexyPaint.MUTED,
-                    LexyPaint.hit(mx,my,width-92,16,80,25));
-        }
-        // Centered identity. This isn't a fake full-page panorama shader.
-        int logoSize=height<330?38:56;
-        int logoY=panelY+(height<330?3:0),logoX=width/2-logoSize/2;
-        c.drawTexture(LexyClient.LOGO,logoX,logoY,logoSize,logoSize,0,0,256,256,256,256);
-        if(height>=330){
-            LexyPaint.title(c,"LEXY CLIENT",width/2-77,panelY+61,1.55f,LexyPaint.WHITE);
-            LexyPaint.label(c,"A CLEANER WAY TO PLAY",width/2-61,panelY+82,140,p.accent());
-        }else{
-            LexyPaint.title(c,"LEXY",logoX+logoSize+6,panelY+10,1.45f,LexyPaint.WHITE);
-            LexyPaint.label(c,"MONO 4.2",logoX+logoSize+6,panelY+28,110,p.accent());
-        }
-        int bottom=Math.max(firstY+buttonH,height-35);
-        c.enableScissor(panelX-3,firstY-3,panelX+panelW+3,bottom);
-        for(int i=scroll;i<Math.min(ITEMS.length,scroll+visible+1);i++){
-            int y=buttonY(i);if(y+buttonH<=bottom)button(c,i,mx,my);
-        }
-        c.disableScissor();
-        if(ITEMS.length>visible){
-            int ax=panelX+panelW-19,top=firstY-20;
-            LexyPaint.button(c,"^",ax,top,19,17,0xD5232323,p.border(),LexyPaint.WHITE,
-                    LexyPaint.hit(mx,my,ax,top,19,17));
-            LexyPaint.button(c,"v",ax,bottom+2,19,17,0xD5232323,p.border(),LexyPaint.WHITE,
-                    LexyPaint.hit(mx,my,ax,bottom+2,19,17));
-        }
-        LexyPaint.label(c,"LEXY 4.2  /  FABRIC 1.20.1",15,height-16,200,LexyPaint.MUTED);
-        String right="RSHIFT / F8  -  MODULES";
-        LexyPaint.label(c,right,Math.max(10,width-textRenderer.getWidth(right)-15),height-16,200,p.accent());
-        super.render(c,mx,my,delta);
+        for(int i=0;i<MAIN.length;i++)menuButton(c,i,mx,my);
+        if(height>=240)for(int i=0;i<TOOLS.length;i++)secondary(c,i,mx,my);
+        LexyPaint.label(c,"FABRIC 1.20.1",12,height-15,125,0xFF858585);
+        if(width>=390)LexyPaint.label(c,"MONO  /  NO OVERLAYS",width-156,height-15,148,0xFF777777);
+        super.render(c,mx,my,dt);
     }
     @Override public boolean mouseClicked(double mx,double my,int button){
         if(button!=0)return super.mouseClicked(mx,my,button);
-        if(width>=590){
-            if(LexyPaint.hit(mx,my,width-297,16,91,27)){client.setScreen(new LexyModernScreen(this));return true;}
-            if(LexyPaint.hit(mx,my,width-200,16,91,27)){client.setScreen(new LexyModernScreen(this,"Settings"));return true;}
-            if(LexyPaint.hit(mx,my,width-103,16,91,27)){TitleBranding.openVanilla(client);return true;}
-        }else if(LexyPaint.hit(mx,my,width-92,16,80,25)){TitleBranding.openVanilla(client);return true;}
-        int bottom=Math.max(firstY+buttonH,height-35);
-        if(ITEMS.length>visible){
-            int ax=panelX+panelW-19;
-            if(LexyPaint.hit(mx,my,ax,firstY-20,19,17)){scroll=Math.max(0,scroll-1);return true;}
-            if(LexyPaint.hit(mx,my,ax,bottom+2,19,17)){scroll=Math.min(ITEMS.length-visible,scroll+1);return true;}
+        for(int i=0;i<MAIN.length;i++)if(LexyPaint.hit(mx,my,left,mainY(i),buttonW,buttonH)){
+            activateMain(i);return true;
         }
-        for(int i=scroll;i<ITEMS.length&&i<scroll+visible+1;i++){
-            int y=buttonY(i);
-            if(y+buttonH<=bottom&&LexyPaint.hit(mx,my,panelX,y,panelW,buttonH)){
-                activate(i);return true;
-            }
+        if(height>=240)for(int i=0;i<TOOLS.length;i++)if(LexyPaint.hit(mx,my,left+i*(toolW+4),toolsTop,toolW,22)){
+            activateTool(i);return true;
         }
         return super.mouseClicked(mx,my,button);
     }
-    private void activate(int index){
+    private void activateMain(int i){
         LexySounds.tap();
-        switch(index){
-            case 0 -> client.setScreen(new SelectWorldScreen(this));
-            case 1 -> client.setScreen(new MultiplayerScreen(this));
-            case 2 -> {
-                try{
-                    Class<?> type=Class.forName("net.minecraft.client.realms.gui.screen.RealmsMainScreen");
-                    var constructor=type.getConstructor(Screen.class);
-                    client.setScreen((Screen)constructor.newInstance(this));
+        switch(i){
+            case 0->client.setScreen(new SelectWorldScreen(this));
+            case 1->client.setScreen(new MultiplayerScreen(this));
+            case 2->{
+                try{Class<?> type=Class.forName("net.minecraft.client.realms.gui.screen.RealmsMainScreen");
+                    var ctor=type.getConstructor(Screen.class);client.setScreen((Screen)ctor.newInstance(this));
                 }catch(ReflectiveOperationException ex){TitleBranding.openVanilla(client);}
             }
-            case 3 -> client.setScreen(new LexyModernScreen(this));
-            case 4 -> client.setScreen(new LexyModernScreen(this,"Settings"));
-            case 5 -> client.setScreen(new LexyModernScreen(this,"Profiles"));
-            case 6 -> client.setScreen(new OptionsScreen(this,client.options));
-            case 7 -> client.scheduleStop();
+            case 3->client.setScreen(new LexyModernScreen(this,"Settings"));
+            case 4->client.scheduleStop();
         }
     }
-    @Override public boolean mouseScrolled(double mx,double my,double amount){
-        scroll=Math.max(0,Math.min(Math.max(0,ITEMS.length-visible),scroll-(int)Math.signum(amount)));
-        return true;
+    private void activateTool(int i){
+        LexySounds.tap();
+        switch(i){
+            case 0->client.setScreen(new LexyModernScreen(this));
+            case 1->client.setScreen(new LexyModernScreen(this,"Profiles"));
+            case 2->client.setScreen(new OptionsScreen(this,client.options));
+            case 3->TitleBranding.openVanilla(client);
+        }
     }
-    @Override public boolean keyPressed(int key,int scan,int modifiers){
+    @Override public boolean keyPressed(int key,int scan,int mods){
         if(key==GLFW.GLFW_KEY_RIGHT_SHIFT||key==GLFW.GLFW_KEY_F8){client.setScreen(new LexyModernScreen(this));return true;}
         if(key==GLFW.GLFW_KEY_ESCAPE){TitleBranding.openVanilla(client);return true;}
-        return super.keyPressed(key,scan,modifiers);
+        return super.keyPressed(key,scan,mods);
     }
     @Override public boolean shouldPause(){return false;}
 }
