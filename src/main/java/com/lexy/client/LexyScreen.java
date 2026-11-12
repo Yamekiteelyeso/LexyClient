@@ -61,7 +61,7 @@ public final class LexyScreen extends Screen {
     private int page(){return scroll/Math.max(1,rowsVisible())+1;}
     private int pages(int n){return Math.max(1,(int)Math.ceil(n/(double)Math.max(1,capacity())));}
     private void updateTextFields(){
-        if(search!=null)search.visible=!editor&&tab<=5;
+        if(search!=null)search.visible=!editor&&tab<=4;
         if(spotifyClientId!=null)spotifyClientId.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected();
         if(spotifySearch!=null)spotifySearch.visible=!editor&&tab==7&&SpotifyController.INSTANCE.isConnected();
         if(spotifyRedirect!=null)spotifyRedirect.visible=!editor&&tab==7&&!SpotifyController.INSTANCE.isConnected();
@@ -99,14 +99,14 @@ public final class LexyScreen extends Screen {
         String needle=query.trim().toLowerCase(Locale.ROOT);
         ArrayList<LexyClient.Module> list=new ArrayList<>();
         for(LexyClient.Module m:LexyClient.MODULES){
-            if ("AutoTotem".equals(m.category()) || "Music".equals(m.category())) continue;
+            if ("AutoTotem".equals(m.category()) || "Music".equals(m.category()) || "Performance".equals(m.category())) continue;
             if(tab>0&&tab<=5&&!m.category().equals(TABS[tab]))continue;
             if(!m.id().toLowerCase(Locale.ROOT).contains(needle))continue;
             list.add(m);
         }
         return list;
     }
-    private boolean modular(){return tab<=5;}
+    private boolean modular(){return tab<=4;}
     @Override public void render(DrawContext c,int mx,int my,float dt){
         renderBackground(c);rect(c,0,0,width,height,0xCC060A10);
         int logicalMX=(int)logical(mx),logicalMY=(int)logical(my);
@@ -118,7 +118,7 @@ public final class LexyScreen extends Screen {
         rect(c,panelX+4,panelY,3,panelH,accent());
         rounded(c,panelX+15,panelY+12,40,40,0xFF0A1322);c.drawTexture(LexyClient.LOGO,panelX+15,panelY+12,40,40,0,0,256,256,256,256);
         label(c,"LexyClient",panelX+60,panelY+18,Math.max(35,sidebarW-57),WHITE);
-        label(c,"Blue Edition 2.0  |  Fabric 1.20.1",panelX+60,panelY+35,Math.max(36,sidebarW-59),MUTED);
+        label(c,"Blue Edition 2.1  |  Fabric 1.20.1",panelX+60,panelY+35,Math.max(36,sidebarW-59),MUTED);
         rect(c,panelX+15,panelY+60,sidebarW-24,1,OUTLINE);
         int count=navCapacity(); navScroll=Math.max(0,Math.min(navScroll,navLimit()));
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+count);i++){
@@ -142,7 +142,7 @@ public final class LexyScreen extends Screen {
         label(c,"LSHIFT: close",panelX+18,panelY+panelH-19,sidebarW-24,MUTED);
         int rx=rightX(),rw=rightW();
         rounded(c,rx,panelY+12,rw,41,PANEL);rect(c,rx,panelY+19,3,27,accent());
-        String title=editor?"HUD LAYOUT EDITOR":tab==6?"FPS OPTIMIZATION":tab==7?"SPOTIFY CONNECT":tab==8?"IN-GAME MUSIC PLAYER":tab==9?"APPEARANCE":tab==10?"CHEATS / AUTOTOTEM":TABS[tab].toUpperCase(Locale.ROOT);
+        String title=editor?"HUD LAYOUT EDITOR":tab==5?"VIDEO SETTINGS":tab==6?"FPS OPTIMIZATION":tab==7?"SPOTIFY CONNECT":tab==8?"IN-GAME MUSIC PLAYER":tab==9?"APPEARANCE":tab==10?"CHEATS / AUTOTOTEM":TABS[tab].toUpperCase(Locale.ROOT);
         label(c,title,rx+12,panelY+19,rw-171,WHITE);
         rounded(c,rx+rw-157,panelY+17,107,28,0xFF245891);
         label(c,"MOVE HUD",rx+rw-143,panelY+27,82,WHITE);
@@ -151,7 +151,7 @@ public final class LexyScreen extends Screen {
         label(c,editor?"Drag readouts to position them":tab==6?"Real Minecraft graphics options":tab==7?"Spotify login works on PC and PojavLauncher":tab==8?"Audio runs inside Minecraft - no other app":tab==9?"Theme, overlay and density settings":tab==10?"AutoTotem controls and configuration":"Enable modules and readouts; switch categories below",rx+12,panelY+35,rw-20,MUTED);
         if(editor)renderEditor(c,logicalMX,logicalMY);
         else if(modular())renderModules(c,logicalMX,logicalMY);
-        else if(tab==6)renderOptimization(c,logicalMX,logicalMY);
+        else if(tab==5||tab==6)renderOptimization(c,logicalMX,logicalMY);
         else if(tab==7)renderSpotify(c,logicalMX,logicalMY);
         else if(tab==8)renderLocalMusic(c,logicalMX,logicalMY);
         else if(tab==10)renderAutoTotem(c,logicalMX,logicalMY);
@@ -169,15 +169,18 @@ public final class LexyScreen extends Screen {
         for(int i=0;i<capacity()&&scroll*cols+i<list.size();i++){
             int idx=scroll*cols+i;LexyClient.Module mod=list.get(idx);
             int col=i%cols,row=i/cols,cw=rw/cols-6,x=rx+col*(rw/cols),cy=y+row*ROW_H;
-            boolean on=LexyClient.enabled.getOrDefault(mod.id(),false);
+            boolean editable=HudRenderer.isRelevant(mod);
+            boolean on=editable&&LexyClient.enabled.getOrDefault(mod.id(),false);
             boolean hover=inside(mx,my,x,cy,cw,ROW_H-4);
             rounded(c,x,cy,cw,ROW_H-4,hover?0xFF2D3C50:PANEL);
             rect(c,x,cy,3,ROW_H-4,on?accent():0xFF46556C);
             label(c,mod.id(),x+11,cy+9,cw-79,WHITE);
             String value;try{value=mod.value().get();}catch(Exception ex){value="Unavailable";}
             label(c,value,x+11,cy+29,cw-28,MUTED);
-            rounded(c,x+cw-49,cy+13,37,20,on?accent():0xFF445269);
-            rounded(c,x+cw-(on?29:46),cy+15,16,16,WHITE);
+            if(editable){
+                rounded(c,x+cw-49,cy+13,37,20,on?accent():0xFF445269);
+                rounded(c,x+cw-(on?29:46),cy+15,16,16,WHITE);
+            }else label(c,"INFO",x+cw-40,cy+19,33,MUTED);
         }
         c.disableScissor();
         if(list.isEmpty())text(c,"No matching modules",rx+16,y+20,MUTED);
@@ -323,33 +326,41 @@ public final class LexyScreen extends Screen {
         }
         c.disableScissor();
     }
+    private static final int TOTEM_ROWS=10;
     private void renderAutoTotem(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+68;
         rounded(c,x,top,w,71,0xFF112F52);rect(c,x,top,4,71,accent());
-        label(c,"AutoTotem  |  "+AutoTotem.status(),x+13,top+10,w-25,WHITE);
-        label(c,"Real inventory offhand swap. Starts disabled.",x+13,top+26,w-24,MUTED);
+        label(c,"AutoTotem | "+AutoTotem.status(),x+13,top+10,w-25,WHITE);
+        label(c,"Direct swap or visible inventory sequence",x+13,top+26,w-24,MUTED);
         int toggleX=x+9,buttonY=top+42,bw=Math.max(60,(w-26)/2);
         rounded(c,toggleX,buttonY,bw,24,LexyClient.enabled.getOrDefault("AutoTotem",false)?0xFF245A86:SURFACE);
         label(c,LexyClient.enabled.getOrDefault("AutoTotem",false)?"ENABLED - TAP TO OFF":"DISABLED - TAP TO ON",toggleX+8,buttonY+8,bw-15,WHITE);
         rounded(c,toggleX+bw+7,buttonY,w-bw-25,24,totemSettingsOpen?0xFF2D638A:SURFACE);
         label(c,totemSettingsOpen?"HIDE SETTINGS":"CONFIGURE",toggleX+bw+15,buttonY+8,w-bw-40,WHITE);
         if(!totemSettingsOpen){
-            label(c,"Tap CONFIGURE to edit swap rules, thresholds and alerts.",x+8,top+96,w-16,MUTED);
-            label(c,"AutoTotem appears only here - not in other tabs.",x+8,top+117,w-16,MUTED);
+            label(c,"Open CONFIGURE to choose mode and timing in ms.",x+8,top+96,w-16,MUTED);
+            label(c,"Inventory mode opens the real player inventory.",x+8,top+116,w-16,MUTED);
             return;
         }
-        String[] labels={"ONLY WHEN OFFHAND EMPTY","LOW HEALTH ONLY","HEALTH THRESHOLD","DELAY BETWEEN SWAPS","SHOW NOTIFICATIONS"};
-        String[] values={AutoTotem.onlyWhenEmpty?"YES":"NO",AutoTotem.lowHealthOnly?"YES":"NO",AutoTotem.healthThreshold+" HP",AutoTotem.intervalTicks+" ticks",AutoTotem.notify?"ON":"OFF"};
-        int start=top+81;int visible=Math.min(labels.length,Math.max(1,(panelY+panelH-43-start)/48));
-        scroll=Math.max(0,Math.min(scroll,Math.max(0,labels.length-visible)));
-        clip(c,x,start,x+w,panelY+panelH-28);
-        for(int i=scroll;i<Math.min(labels.length,scroll+visible);i++){
-            int y=start+(i-scroll)*48;rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
-            label(c,labels[i],x+19,y+16,w-143,WHITE);rounded(c,x+w-111,y+8,96,25,SURFACE);
-            label(c,values[i],x+w-102,y+16,83,WHITE);
+        String[] labels={"MODE", "RANDOM TOTEM SLOT", "MIN DELAY", "MAX DELAY", "INVENTORY STEP", "AFTER-SWAP COOLDOWN", "ONLY WHEN OFFHAND EMPTY", "LOW HEALTH ONLY", "HEALTH THRESHOLD", "SHOW NOTIFICATIONS"};
+        String[] values={AutoTotem.mode==AutoTotem.Mode.DIRECT?"DIRECT":"INVENTORY", AutoTotem.randomSource?"ON":"OFF",AutoTotem.minDelayMs+" ms",AutoTotem.maxDelayMs+" ms",AutoTotem.inventoryStepMs+" ms",AutoTotem.cooldownMs+" ms",AutoTotem.onlyWhenEmpty?"YES":"NO",AutoTotem.lowHealthOnly?"YES":"NO",AutoTotem.healthThreshold+" HP",AutoTotem.notify?"ON":"OFF"};
+        int start=top+81,bodyEnd=panelY+panelH-65;
+        int visible=Math.min(TOTEM_ROWS,Math.max(1,(bodyEnd-start)/48));
+        scroll=Math.max(0,Math.min(scroll,Math.max(0,TOTEM_ROWS-visible)));
+        clip(c,x,start,x+w,bodyEnd);
+        for(int i=scroll;i<Math.min(TOTEM_ROWS,scroll+visible);i++){
+            int yy=start+(i-scroll)*48;rounded(c,x+7,yy,w-15,41,PANEL);rect(c,x+7,yy+8,3,25,accent());
+            label(c,labels[i],x+19,yy+16,w-145,WHITE);rounded(c,x+w-113,yy+8,98,25,SURFACE);
+            label(c,values[i],x+w-104,yy+16,86,WHITE);
         }
         c.disableScissor();
-        label(c,"Tap a setting to cycle. Changes save automatically.",x+9,panelY+panelH-21,w-20,MUTED);
+        int controlsY=panelY+panelH-60;
+        rounded(c,x+7,controlsY,65,25,scroll>0?SURFACE:OUTLINE);
+        label(c,"< UP",x+18,controlsY+9,52,WHITE);
+        rounded(c,x+w-74,controlsY,67,25,scroll<Math.max(0,TOTEM_ROWS-visible)?SURFACE:OUTLINE);
+        label(c,"DOWN >",x+w-67,controlsY+9,58,WHITE);
+        label(c,"Settings "+(scroll+1)+"-"+Math.min(TOTEM_ROWS,scroll+visible)+" / "+TOTEM_ROWS,x+80,controlsY+9,w-164,MUTED);
+        label(c,"50 ms/tick precision. Server rules still apply.",x+9,panelY+panelH-25,w-20,MUTED);
     }
     @Override public boolean keyPressed(int keyCode,int scanCode,int modifiers){
         if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT){
@@ -442,9 +453,9 @@ public final class LexyScreen extends Screen {
             if(inside(mx,my,rx,yy,rw,contentH())){
                 int cw=rw/cols;int col=(int)(mx-rx)/cw,row=(int)(my-yy)/ROW_H;
                 int i=(row+scroll)*cols+col;List<LexyClient.Module> list=filtered();
-                if(i>=0&&i<list.size()){var m=list.get(i);LexyClient.enabled.put(m.id(),!LexyClient.enabled.getOrDefault(m.id(),false));LexyClient.save();return true;}
+                if(i>=0&&i<list.size()){var m=list.get(i);if(HudRenderer.isRelevant(m)){LexyClient.enabled.put(m.id(),!LexyClient.enabled.getOrDefault(m.id(),false));LexyClient.save();}return true;}
             }
-        }else if(tab==6){
+        }else if(tab==5||tab==6){
             int pw=(rw-20)/3,yy=panelY+63;
             for(int i=0;i<3;i++)if(inside(mx,my,rx+i*pw,yy,pw-5,29)){
                 OptimizationManager.apply(new String[]{"MAX FPS","BALANCED","QUALITY"}[i]);return true;
@@ -516,21 +527,33 @@ public final class LexyScreen extends Screen {
         }else if(tab==10){
             int top=panelY+68,buttonY=top+42,bw=Math.max(60,(rw-26)/2);
             if(inside(mx,my,rx+9,buttonY,bw,24)){
-                LexyClient.enabled.put("AutoTotem",!LexyClient.enabled.getOrDefault("AutoTotem",false));LexyClient.save();return true;
+                boolean next=!LexyClient.enabled.getOrDefault("AutoTotem",false);
+                LexyClient.enabled.put("AutoTotem",next);
+                if(!next)AutoTotem.onDisabled();
+                LexyClient.save();return true;
             }
             if(inside(mx,my,rx+9+bw+7,buttonY,rw-bw-25,24)){
                 totemSettingsOpen=!totemSettingsOpen;scroll=0;return true;
             }
             if(totemSettingsOpen){
-                int yy=top+81;int row=48;
-                int visible=Math.min(5,Math.max(1,(panelY+panelH-43-yy)/row));
-                for(int i=scroll;i<Math.min(5,scroll+visible);i++)if(inside(mx,my,rx+7,yy+(i-scroll)*row,rw-16,42)){
+                int yy=top+81,row=48,bodyEnd=panelY+panelH-65;
+                int visible=Math.min(TOTEM_ROWS,Math.max(1,(bodyEnd-yy)/row));
+                int max=Math.max(0,TOTEM_ROWS-visible),controlsY=panelY+panelH-60;
+                if(inside(mx,my,rx+7,controlsY,65,25)){scroll=Math.max(0,scroll-1);return true;}
+                if(inside(mx,my,rx+rw-74,controlsY,67,25)){scroll=Math.min(max,scroll+1);return true;}
+                for(int i=scroll;i<Math.min(TOTEM_ROWS,scroll+visible);i++)if(inside(mx,my,rx+7,yy+(i-scroll)*row,rw-16,41)){
                     switch(i){
-                        case 0->AutoTotem.onlyWhenEmpty=!AutoTotem.onlyWhenEmpty;
-                        case 1->AutoTotem.lowHealthOnly=!AutoTotem.lowHealthOnly;
-                        case 2->AutoTotem.healthThreshold=AutoTotem.healthThreshold>=20?2:AutoTotem.healthThreshold+2;
-                        case 3->AutoTotem.intervalTicks=AutoTotem.intervalTicks>=30?2:AutoTotem.intervalTicks+2;
-                        case 4->AutoTotem.notify=!AutoTotem.notify;
+                        case 0->AutoTotem.mode=AutoTotem.mode==AutoTotem.Mode.DIRECT?AutoTotem.Mode.INVENTORY:AutoTotem.Mode.DIRECT;
+                        case 1->AutoTotem.randomSource=!AutoTotem.randomSource;
+                        case 2->{AutoTotem.minDelayMs=AutoTotem.minDelayMs>=1000?50:AutoTotem.minDelayMs+50;
+                                  AutoTotem.maxDelayMs=Math.max(AutoTotem.maxDelayMs,AutoTotem.minDelayMs);}
+                        case 3->AutoTotem.maxDelayMs=AutoTotem.maxDelayMs>=1800?AutoTotem.minDelayMs:AutoTotem.maxDelayMs+100;
+                        case 4->AutoTotem.inventoryStepMs=AutoTotem.inventoryStepMs>=900?100:AutoTotem.inventoryStepMs+50;
+                        case 5->AutoTotem.cooldownMs=AutoTotem.cooldownMs>=2600?200:AutoTotem.cooldownMs+150;
+                        case 6->AutoTotem.onlyWhenEmpty=!AutoTotem.onlyWhenEmpty;
+                        case 7->AutoTotem.lowHealthOnly=!AutoTotem.lowHealthOnly;
+                        case 8->AutoTotem.healthThreshold=AutoTotem.healthThreshold>=20?2:AutoTotem.healthThreshold+2;
+                        case 9->AutoTotem.notify=!AutoTotem.notify;
                     }
                     LexyClient.save();return true;
                 }
@@ -589,11 +612,11 @@ public final class LexyScreen extends Screen {
         if(inside(mx,my,rightX(),contentY(),rightW(),contentH())||tab==6||tab==7||tab==8||tab==9||tab==10){
             int max=0;
             if(modular())max=maxScroll(filtered().size());
-            else if(tab==6)max=Math.max(0,OptimizationManager.OPTIONS.size()-Math.max(1,(panelY+panelH-35-(panelY+115))/48));
+            else if(tab==5||tab==6)max=Math.max(0,OptimizationManager.OPTIONS.size()-Math.max(1,(panelY+panelH-35-(panelY+115))/48));
             else if(tab==7)max=Math.max(0,(showDevices?SpotifyController.INSTANCE.devices().size():SpotifyController.INSTANCE.tracks().size())-Math.max(1,(panelY+panelH-27-(panelY+318))/(showDevices?31:32)));
             else if(tab==8)max=Math.max(0,LocalMusicPlayer.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+248))/31));
             else if(tab==9)max=Math.max(0,17-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
-            else if(tab==10)max=totemSettingsOpen?Math.max(0,5-Math.max(1,(panelY+panelH-43-(panelY+149))/48)):0;
+            else if(tab==10)max=totemSettingsOpen?Math.max(0,TOTEM_ROWS-Math.max(1,(panelY+panelH-65-(panelY+149))/48)):0;
             scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
         }return super.mouseScrolled(mx,my,amount);
     }

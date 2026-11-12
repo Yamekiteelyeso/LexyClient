@@ -57,7 +57,7 @@ public final class LexyClient implements ClientModInitializer {
   positions.clear();save();
  }
 
- private static final int CONFIG_VERSION = 200;
+ private static final int CONFIG_VERSION = 210;
  private static void applyCompactDefaults(){
   Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
   for(Module module : MODULES){
@@ -185,7 +185,7 @@ public final class LexyClient implements ClientModInitializer {
  }
  private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
  @Override public void onInitializeClient(){LexySounds.init();mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
- ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));AutoTotem.tick(client);if(client.player==null){lastHealth=-1;return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
+ ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new HudEditorScreen(client.currentScreen));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));AutoTotem.tick(client);if(client.player==null){lastHealth=-1;AutoTotem.resetRuntime();return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null&&ticks%10==0){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
  HudRenderCallback.EVENT.register((context,delta)->{
   if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen||mc.currentScreen instanceof HudEditorScreen)return;
@@ -201,7 +201,11 @@ public final class LexyClient implements ClientModInitializer {
  style.addProperty("uiSounds",uiSounds);style.addProperty("uiSoundVolume",uiSoundVolume);style.addProperty("maxHudWidgets",maxHudWidgets);
  style.addProperty("hudPreset",hudPreset);style.addProperty("hudMinimal",hudMinimal);style.addProperty("hudShadow",hudShadow);style.addProperty("compactHud",compactHud);style.addProperty("spotifyHud",spotifyHud);
  style.addProperty("lowHealthThreshold",lowHealthThreshold);style.addProperty("armorWarnPercent",armorWarnPercent);style.addProperty("hudTextColor",hudTextColor);
- JsonObject totem=new JsonObject();totem.addProperty("onlyWhenEmpty",AutoTotem.onlyWhenEmpty);totem.addProperty("lowHealthOnly",AutoTotem.lowHealthOnly);totem.addProperty("healthThreshold",AutoTotem.healthThreshold);totem.addProperty("intervalTicks",AutoTotem.intervalTicks);totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
+ JsonObject totem=new JsonObject();totem.addProperty("onlyWhenEmpty",AutoTotem.onlyWhenEmpty);totem.addProperty("lowHealthOnly",AutoTotem.lowHealthOnly);totem.addProperty("healthThreshold",AutoTotem.healthThreshold);
+ totem.addProperty("mode",AutoTotem.mode.name());totem.addProperty("randomSource",AutoTotem.randomSource);
+ totem.addProperty("minDelayMs",AutoTotem.minDelayMs);totem.addProperty("maxDelayMs",AutoTotem.maxDelayMs);
+ totem.addProperty("inventoryStepMs",AutoTotem.inventoryStepMs);totem.addProperty("cooldownMs",AutoTotem.cooldownMs);
+ totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
  root.add("style",style);root.addProperty("spotifyClientId",spotifyClientId);
  root.addProperty("localMusicVolume",LocalMusicPlayer.INSTANCE.volume());root.addProperty("localMusicLoop",LocalMusicPlayer.INSTANCE.looping());
  Files.writeString(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
@@ -232,7 +236,13 @@ public final class LexyClient implements ClientModInitializer {
  if(t.has("onlyWhenEmpty"))AutoTotem.onlyWhenEmpty=t.get("onlyWhenEmpty").getAsBoolean();
  if(t.has("lowHealthOnly"))AutoTotem.lowHealthOnly=t.get("lowHealthOnly").getAsBoolean();
  if(t.has("healthThreshold"))AutoTotem.healthThreshold=Math.max(2,Math.min(20,t.get("healthThreshold").getAsInt()));
- if(t.has("intervalTicks"))AutoTotem.intervalTicks=Math.max(2,Math.min(30,t.get("intervalTicks").getAsInt()));
+ if(t.has("intervalTicks")&&!t.has("cooldownMs"))AutoTotem.cooldownMs=Math.max(200,Math.min(2500,t.get("intervalTicks").getAsInt()*50));
+ if(t.has("mode"))try{AutoTotem.mode=AutoTotem.Mode.valueOf(t.get("mode").getAsString());}catch(IllegalArgumentException ignored){}
+ if(t.has("randomSource"))AutoTotem.randomSource=t.get("randomSource").getAsBoolean();
+ if(t.has("minDelayMs"))AutoTotem.minDelayMs=Math.max(50,Math.min(1500,t.get("minDelayMs").getAsInt()));
+ if(t.has("maxDelayMs"))AutoTotem.maxDelayMs=Math.max(AutoTotem.minDelayMs,Math.min(2500,t.get("maxDelayMs").getAsInt()));
+ if(t.has("inventoryStepMs"))AutoTotem.inventoryStepMs=Math.max(100,Math.min(1100,t.get("inventoryStepMs").getAsInt()));
+ if(t.has("cooldownMs"))AutoTotem.cooldownMs=Math.max(200,Math.min(3000,t.get("cooldownMs").getAsInt()));
  if(t.has("notify"))AutoTotem.notify=t.get("notify").getAsBoolean();}
  if(root.has("spotifyClientId"))spotifyClientId=root.get("spotifyClientId").getAsString();
  if(root.has("localMusicVolume"))localMusicVolume=Math.max(0,Math.min(100,root.get("localMusicVolume").getAsInt()));

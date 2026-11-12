@@ -1,11 +1,13 @@
-# LexyClient 2.0 — Fabric 1.20.1
+# LexyClient 2.1.0
 
-Minecraft client mod for desktop/PojavLauncher with responsive interface, a curated draggable HUD, custom UI sounds, configurable performance presets and Spotify OAuth PKCE controls.
+Client-side mod for **Minecraft 1.20.1 + Fabric**. The source project includes a responsive graphite/blue menu, customizable HUD widgets, audio UI feedback, Spotify OAuth PKCE controls and optional AutoTotem inventory helpers.
 
-- 4 original OGG UI chimes; adjustable volume and on/off.
-- Optimization/performance values are **menu-only**; in-game HUD strictly allowlists useful metrics and caps visible widget count.
-- Spotify Android ACTION_VIEW attempt, copy-login-URL fallback and secure manual callback paste to complete PKCE when loopback callbacks fail. Requires user's registered Spotify Developer application and exact redirect `http://127.0.0.1:43871/callback`.
+## Build
 
-Run Gradle with Java 17 and Fabric Loom: `gradle build`. Dependencies: Fabric API 0.92.3+1.20.1.
+Java 17 and Gradle 8.x: `gradle build`. Use the build artifact from CI in `.minecraft/mods` with Fabric API.
 
-Full instructions: LEEME_ES.md.
+## AutoTotem 2.1
+
+Switch between `DIRECT` slot SWAP and an `INVENTORY` sequence that opens the vanilla inventory, renders a virtual pointer, and performs checked vanilla PICKUP actions. Configure randomized totem source-slot choice and millisecond delays in `Cheats > CONFIGURE`.
+
+This is not a server-side plugin and cannot override server inventory rules. Millisecond values are sampled on 20 Hz client ticks. The system cursor is not moved, which keeps touch launchers supported. Please follow server rules.

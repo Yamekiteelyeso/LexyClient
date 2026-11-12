@@ -1,26 +1,16 @@
-# LexyClient 2.0 — PC y PojavLauncher
+# LexyClient 2.1.0 — Fabric 1.20.1
 
-## Instalación
-- Minecraft 1.20.1 + Fabric Loader + Fabric API; Java 17.
-- Coloca `lexy-client-2.0.0.jar` en `mods`, quitando otros LexyClient antiguos.
-- Menú de pausa > LexyClient, o SHIFT derecho en teclado. RCTRL: editor de HUD.
+Requiere **Minecraft 1.20.1**, **Fabric Loader**, **Fabric API** y **Java 17** (en PojavLauncher usa el entorno Java compatible con 1.20.1).
 
-## HUD y optimización
-- Rendimiento y optimización se muestran **únicamente en el menú**, nunca como indicadores flotantes.
-- El HUD permite solo métricas relevantes (FPS, ping, salud, comida, tótems, efectos, alertas, coordenadas...), con límite predeterminado de 7 widgets.
-- Oculta alertas cuando están OK y opciones apagadas. Puedes activar/desactivar cada widget y moverlo.
-- Tres perfiles: Minimal, Normal y Extended. En Appearance cambia Max HUD Widgets.
-- Se incluyen cuatro sonidos originales, ajustables desde Appearance > UI Sounds / UI Sound Volume.
+1. Elimina las versiones anteriores de LexyClient de `mods`.
+2. Copia `LexyClient-2.1.0.jar` a la carpeta `mods` de la instancia.
+3. Abre el juego y entra a **Cheats > AutoTotem > CONFIGURE**.
+4. Selecciona `MODE`: DIRECT o INVENTORY. `RANDOM TOTEM SLOT` cambia qué ranura se usa cuando hay más de un tótem disponible.
+5. Ajusta `MIN DELAY`, `MAX DELAY`, `INVENTORY STEP` y `AFTER-SWAP COOLDOWN` en milisegundos. Usa flechas UP/DOWN para recorrer las opciones en Pojav.
+6. Activa AutoTotem explícitamente; queda apagado por defecto.
 
-## Spotify en PojavLauncher / móvil
-1. Desde https://developer.spotify.com/dashboard crea una aplicación Spotify.
-2. Registra EXACTAMENTE la URI de retorno: `http://127.0.0.1:43871/callback` (HTTP 127.0.0.1 está permitido como loopback según Spotify).
-3. Introduce el **Client ID público** en la pestaña Spotify (NO el Client Secret).
-4. Pulsa LOGIN WITH SPOTIFY. Se intenta abrir el navegador Android mediante ACTION_VIEW; si no se abre, pulsa COPY LOGIN URL y pégalo en el navegador.
-5. Autoriza tu cuenta en Spotify. Si se vuelve al mod, la conexión será automática.
-6. Si el navegador da fallo al llegar a 127.0.0.1, **copia la URL completa** de la barra de direcciones (`http://127.0.0.1:43871/callback?code=...&state=...`), regresa al juego, pega la URL en el campo de retorno y pulsa FINISH LOGIN FROM CALLBACK URL.
-7. La cuenta debe tener permisos para esa aplicación en Spotify Developer, y algunos controles de reproducción requieren Spotify Premium y una sesión de Spotify abierta en el teléfono u otro dispositivo.
+**DIRECT** realiza el intercambio usando el control normal de offhand. **INVENTORY** abre el inventario, muestra un puntero virtual y utiliza la secuencia coger/poner/devolver. Si el intercambio no es aceptado por el servidor no se garantiza que termine correctamente; el programa evitará operar durante un cooldown.
 
-El mod usa PKCE y verifica el parámetro `state`. Nunca introduces tu contraseña de Spotify en LexyClient. Los tokens se mantienen en memoria hasta cerrar Minecraft.
+Los intervalos en milisegundos se redondean efectivamente al siguiente tick del cliente (normalmente 50 ms). El cursor de pantalla dibujado no es un cursor físico de Android. Al cancelar en medio de una transferencia, si queda un objeto en el cursor, vuelve a colocarlo manualmente en una ranura vacía.
 
-**Limitación importante:** el mod no reproduce canciones de Spotify en sí mismo; controla Spotify mediante su Web API. No hay garantía sin probar PojavLauncher en un teléfono real. Si el login falla, consulta el estado que aparece en la pestaña Spotify.
+**Compatibilidad:** la compilación en GitHub Actions comprueba Java/Fabric, pero no sustituye una prueba dentro de Minecraft o PojavLauncher.
