@@ -1,4 +1,4 @@
-# Lexy Client 1.4.0 — Blue Edition
+# LexyClient 1.5.0 — Blue Edition
 
 Client-only Fabric mod for **Minecraft 1.20.1**, built with **Java 17**. Designed for legitimate BoxPvP gameplay, with graphite/blue menus, HUD customization, real video settings, Spotify Connect controls and a **real in-process music player for your own files**.
 
@@ -32,7 +32,7 @@ The OAuth tokens remain in memory during each Minecraft session; exit and reconn
 
 ## Local music actually playing inside Minecraft (no other player)
 
-Lexy 1.4 adds `LocalMusicPlayer.java`, a Java Sound PCM streaming player running on a dedicated background thread **inside the Minecraft process**. Audio is sent to your PC's output sound device. No Spotify or second app is needed for your local files.
+Lexy 1.5 adds `LocalMusicPlayer.java`, a Java Sound PCM streaming player running on a dedicated background thread **inside the Minecraft process**. Audio is sent to your PC's output sound device. No Spotify or second app is needed for your local files.
 
 1. Open `Right Shift > Local Music` and click **OPEN FOLDER**.
 2. Put your legally owned `.wav`, `.aiff`, `.aif` or `.au` music files in `.minecraft/config/lexy-music/`.

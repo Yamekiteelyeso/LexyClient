@@ -10,19 +10,21 @@ import java.util.*;
 public final class LexyScreen extends Screen {
     private static final int BG=0xFF11151D, PANEL=0xFF1A202B, SURFACE=0xFF273142;
     private static final int OUTLINE=0xFF364354, WHITE=0xFFF4F7FC, MUTED=0xFFA5B2C4;
-    private static final String[] TABS={"All Modules","Combat","HUD","Statistics","Utilities","Performance","Optimization","Spotify","Local Music","Appearance"};
+    private static final String[] TABS={"All Modules","Combat","HUD","Statistics","Utilities","Performance","Optimization","Spotify","Local Music","Appearance","AutoTotem"};
     private static final int ROW_H=52, NAV_ROW=30;
     private final boolean editor;
     private int tab, scroll=0, navScroll=0, selected=-1, dragDX=0, dragDY=0;
+    private final Screen parent;
     private boolean dragging=false, showDevices=false;
     private String query="";
     private TextFieldWidget search,spotifyClientId,spotifySearch;
     private int panelX,panelY,panelW,panelH,sidebarW;
-    public LexyScreen(boolean editor){this(editor,0);}
-    public LexyScreen(boolean editor,int tab){super(Text.literal("Lexy Client | BoxPvP Edition"));this.editor=editor;this.tab=tab;}
+    public LexyScreen(boolean editor){this(editor,0,null);}
+    public LexyScreen(boolean editor,int tab){this(editor,tab,null);}
+    public LexyScreen(boolean editor,int tab,Screen parent){super(Text.literal("LexyClient"));this.editor=editor;this.tab=tab;this.parent=parent;}
     @Override protected void init(){
-        panelW=Math.min(870,Math.max(255,width-24));panelH=Math.min(510,Math.max(180,height-20));
-        panelX=(width-panelW)/2;panelY=(height-panelH)/2;sidebarW=panelW<450?84:panelW<570?117:159;
+        panelW=Math.min(965,Math.max(255,width-12));panelH=Math.min(580,Math.max(185,height-12));
+        panelX=(width-panelW)/2;panelY=(height-panelH)/2;sidebarW=panelW<450?84:panelW<570?117:168;
         int rx=rightX();int rw=rightW();
         search=new TextFieldWidget(textRenderer,rx+10,panelY+63,rw-20,21,Text.literal("Search modules"));
         search.setMaxLength(80);search.setPlaceholder(Text.literal("Search your modules..."));
@@ -38,13 +40,15 @@ public final class LexyScreen extends Screen {
     private int rightX(){return panelX+sidebarW+9;}
     private int rightW(){return panelW-sidebarW-20;}
     private int contentY(){return panelY+96;}
-    private int contentH(){return panelH-132;}
+    private int contentH(){return Math.max(35,panelH-157);}
     private int columns(){return rightW()>480?2:1;}
-    private int navCapacity(){return Math.max(2,(panelH-139)/NAV_ROW);}
+    private int navCapacity(){return Math.max(2,(panelH-164)/NAV_ROW);}
     private int navLimit(){return Math.max(0,TABS.length-navCapacity());}
     private int rowsVisible(){return Math.max(1,contentH()/ROW_H);}
     private int capacity(){return columns()*rowsVisible();}
     private int maxScroll(int n){return Math.max(0,(int)Math.ceil(n/(double)columns())-rowsVisible());}
+    private int page(){return scroll/Math.max(1,rowsVisible())+1;}
+    private int pages(int n){return Math.max(1,(int)Math.ceil(n/(double)Math.max(1,capacity())));}
     private void updateTextFields(){
         if(search!=null)search.visible=!editor&&tab<=5;
         if(spotifyClientId!=null)spotifyClientId.visible=!editor&&tab==7;
@@ -87,9 +91,9 @@ public final class LexyScreen extends Screen {
         rounded(c,panelX,panelY,panelW,panelH,BG);frame(c,panelX+4,panelY,panelW-8,1,0xFF39465B);
         rect(c,panelX+4,panelY,sidebarW,panelH,PANEL);
         rect(c,panelX+4,panelY,3,panelH,accent());
-        rounded(c,panelX+15,panelY+16,32,32,accent());text(c,"L",panelX+27,panelY+27,WHITE);
-        text(c,"LEXY CLIENT",panelX+53,panelY+18,WHITE);
-        label(c,"BoxPvP Edition 1.20.1",panelX+53,panelY+35,Math.max(45,sidebarW-52),MUTED);
+        rounded(c,panelX+15,panelY+12,40,40,0xFF0A1322);c.drawTexture(LexyClient.LOGO,panelX+15,panelY+12,40,40,0,0,256,256,256,256);
+        label(c,"LexyClient",panelX+60,panelY+18,Math.max(35,sidebarW-57),WHITE);
+        label(c,"BoxPvP Edition 1.20.1",panelX+60,panelY+35,Math.max(36,sidebarW-59),MUTED);
         rect(c,panelX+15,panelY+60,sidebarW-24,1,OUTLINE);
         int count=navCapacity(); navScroll=Math.max(0,Math.min(navScroll,navLimit()));
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+count);i++){
@@ -100,22 +104,24 @@ public final class LexyScreen extends Screen {
             label(c,navName,panelX+21,yy+9,sidebarW-30,active?WHITE:MUTED);
         }
         if(navLimit()>0)label(c,"Scroll menu ("+(navScroll+1)+"-"+Math.min(TABS.length,navScroll+count)+")",panelX+14,panelY+panelH-57,sidebarW-18,MUTED);
-        rect(c,panelX+14,panelY+panelH-47,sidebarW-21,1,OUTLINE);
-        label(c,editor?"HUD EDITOR":LexyClient.moduleCount()+" READOUTS",panelX+18,panelY+panelH-34,sidebarW-25,accent());
-        label(c,"R SHIFT / R CTRL",panelX+18,panelY+panelH-20,sidebarW-24,MUTED);
+        rect(c,panelX+14,panelY+panelH-56,sidebarW-21,1,OUTLINE);
+        label(c,editor?"HUD EDITOR":LexyClient.moduleCount()+" READOUTS",panelX+18,panelY+panelH-43,sidebarW-25,accent());
+        label(c,"R SHIFT  open",panelX+18,panelY+panelH-31,sidebarW-24,MUTED);
+        label(c,"L SHIFT  close",panelX+18,panelY+panelH-19,sidebarW-24,MUTED);
         int rx=rightX(),rw=rightW();
         rounded(c,rx,panelY+12,rw,41,PANEL);rect(c,rx,panelY+19,3,27,accent());
-        String title=editor?"HUD LAYOUT EDITOR":tab==6?"FPS OPTIMIZATION":tab==7?"SPOTIFY CONNECT":tab==8?"IN-GAME MUSIC PLAYER":tab==9?"APPEARANCE":TABS[tab].toUpperCase(Locale.ROOT);
+        String title=editor?"HUD LAYOUT EDITOR":tab==6?"FPS OPTIMIZATION":tab==7?"SPOTIFY CONNECT":tab==8?"IN-GAME MUSIC PLAYER":tab==9?"APPEARANCE":tab==10?"AUTOTOTEM / OFFHAND":TABS[tab].toUpperCase(Locale.ROOT);
         text(c,title,rx+12,panelY+19,WHITE);
-        label(c,editor?"Drag readouts to position them":tab==6?"Real Minecraft graphics options":tab==7?"Search and control Spotify Connect":tab==8?"Audio runs inside Minecraft - no other app":tab==9?"Theme, overlay and density settings":"Enable the readouts you want on screen",rx+12,panelY+35,rw-20,MUTED);
+        label(c,editor?"Drag readouts to position them":tab==6?"Real Minecraft graphics options":tab==7?"Search and control Spotify Connect":tab==8?"Audio runs inside Minecraft - no other app":tab==9?"Theme, overlay and density settings":tab==10?"Real offhand inventory swap - disabled by default":"Enable modules and readouts; switch categories below",rx+12,panelY+35,rw-20,MUTED);
         if(editor)renderEditor(c,mx,my);
         else if(modular())renderModules(c,mx,my);
         else if(tab==6)renderOptimization(c,mx,my);
         else if(tab==7)renderSpotify(c,mx,my);
         else if(tab==8)renderLocalMusic(c,mx,my);
+        else if(tab==10)renderAutoTotem(c,mx,my);
         else renderStyle(c,mx,my);
         super.render(c,mx,my,dt);
-        String footer=editor?"Drag preview chips  |  Reset restores positions":tab==7?"Spotify Connect - use Spotify on this computer":tab==8?"WAV / AIFF  |  Playback happens inside Minecraft":"Right Shift opens Lexy  |  Settings auto-save";
+        String footer=editor?"Drag preview chips  |  Reset restores positions":tab==7?"Spotify Connect - use Spotify on this computer":tab==8?"WAV / AIFF  |  Playback happens inside Minecraft":"RIGHT SHIFT: OPEN  |  LEFT SHIFT: CLOSE  |  Settings auto-save";
         label(c,footer,rx+7,panelY+panelH-17,rw-14,MUTED);
     }
     private void renderModules(DrawContext c,int mx,int my){
@@ -138,6 +144,10 @@ public final class LexyScreen extends Screen {
         c.disableScissor();
         if(list.isEmpty())text(c,"No matching modules",rx+16,y+20,MUTED);
         drawScrollbar(c,list.size(),y,contentH());
+        int pagerY=panelY+panelH-42;
+        rounded(c,rx,pagerY,62,20,scroll>0?SURFACE:OUTLINE);label(c,"< PREV",rx+8,pagerY+7,52,WHITE);
+        rounded(c,rx+rw-62,pagerY,62,20,scroll<maxScroll(list.size())?SURFACE:OUTLINE);label(c,"NEXT >",rx+rw-54,pagerY+7,52,WHITE);
+        label(c,"Page "+page()+" / "+pages(list.size())+"    "+list.size()+" modules",rx+68,pagerY+7,rw-142,WHITE);
     }
     private void drawScrollbar(DrawContext c,int count,int y,int h){
         int mx=maxScroll(count);if(mx<1)return;int xx=rightX()+rightW()-4;
@@ -250,6 +260,29 @@ public final class LexyScreen extends Screen {
         }
         c.disableScissor();
     }
+    private void renderAutoTotem(DrawContext c,int mx,int my){
+        int x=rightX(),w=rightW(),top=panelY+67;
+        rounded(c,x,top,w,38,0xFF112F52);rect(c,x,top,4,38,accent());
+        label(c,"AUTOTOTEM  "+AutoTotem.status(),x+13,top+8,w-24,WHITE);
+        label(c,"Uses vanilla inventory SWAP; obey your server's rules.",x+13,top+23,w-24,MUTED);
+        String[] labels={"ENABLE AUTOTOTEM","SWAP ONLY IF OFFHAND EMPTY","LOW HEALTH ONLY","HEALTH THRESHOLD","DELAY BETWEEN SWAPS","SHOW NOTIFICATIONS"};
+        String[] values={LexyClient.enabled.getOrDefault("AutoTotem",false)?"ON":"OFF",AutoTotem.onlyWhenEmpty?"YES":"NO",AutoTotem.lowHealthOnly?"YES":"NO",AutoTotem.healthThreshold+" HP",AutoTotem.intervalTicks+" ticks",AutoTotem.notify?"ON":"OFF"};
+        int start=top+46;int visible=Math.min(labels.length,Math.max(1,(panelY+panelH-43-start)/48));
+        scroll=Math.max(0,Math.min(scroll,Math.max(0,labels.length-visible)));
+        c.enableScissor(x,start,x+w,panelY+panelH-28);
+        for(int i=scroll;i<Math.min(labels.length,scroll+visible);i++){int y=start+(i-scroll)*48;rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            label(c,labels[i],x+19,y+16,w-143,WHITE);rounded(c,x+w-111,y+8,96,25,SURFACE);
+            label(c,values[i],x+w-102,y+16,83,i==0&&LexyClient.enabled.getOrDefault("AutoTotem",false)?0xFF75CAFF:WHITE);
+        }
+        c.disableScissor();
+        label(c,"Default OFF. Left click each setting to change.",x+9,panelY+panelH-21,w-20,MUTED);
+    }
+    @Override public boolean keyPressed(int keyCode,int scanCode,int modifiers){
+        if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT){
+            if(client!=null)client.setScreen(parent);return true;
+        }
+        return super.keyPressed(keyCode,scanCode,modifiers);
+    }
     private void renderStyle(DrawContext c,int mx,int my){
         int rx=rightX(),rw=rightW(),yy=panelY+66;
         text(c,"ACCENT COLOR",rx+8,yy,WHITE);yy+=20;
@@ -258,14 +291,17 @@ public final class LexyScreen extends Screen {
             if(i==Math.floorMod(LexyClient.accentChoice,LexyClient.ACCENTS.length))frame(c,xx-2,yy-2,49,32,WHITE);
         }
         yy+=45;
-        String[] names={"HUD Background","Text Shadow","Compact Readouts","Spotify Overlay","Background Opacity","Widget Spacing"};
-        for(int i=0;i<names.length;i++){
-            int y=yy+i*44;rect(c,rx+7,y,rw-15,39,PANEL);rect(c,rx+7,y,3,39,accent());
+        String[] names={"HUD Background","Text Shadow","Compact Readouts","Spotify Overlay","Background Opacity","Widget Spacing","Low HP Warning","Armor Warning %","HUD Text Color"};
+        int listY=yy;int showCount=Math.max(1,(panelY+panelH-45-listY)/44);
+        scroll=Math.min(scroll,Math.max(0,names.length-showCount));
+        c.enableScissor(rx,listY,rx+rw,listY+showCount*44);
+        for(int i=scroll;i<Math.min(names.length,scroll+showCount);i++){
+            int y=yy+(i-scroll)*44;rect(c,rx+7,y,rw-15,39,PANEL);rect(c,rx+7,y,3,39,accent());
             label(c,names[i],rx+19,y+14,rw-150,WHITE);
-            String value=switch(i){case 0->LexyClient.hudBackground?"ON":"OFF";case 1->LexyClient.hudShadow?"ON":"OFF";case 2->LexyClient.compactHud?"ON":"OFF";case 3->LexyClient.spotifyHud?"ON":"OFF";case 4->LexyClient.hudOpacity+" / 245";default->LexyClient.hudSpacing+" px";};
+            String value=switch(i){case 0->LexyClient.hudBackground?"ON":"OFF";case 1->LexyClient.hudShadow?"ON":"OFF";case 2->LexyClient.compactHud?"ON":"OFF";case 3->LexyClient.spotifyHud?"ON":"OFF";case 4->LexyClient.hudOpacity+" / 245";case 5->LexyClient.hudSpacing+" px";case 6->LexyClient.lowHealthThreshold+" HP";case 7->LexyClient.armorWarnPercent+"%";default->new String[]{"White","Blue","Cool Gray"}[LexyClient.hudTextColor];};
             rect(c,rx+rw-124,y+7,111,25,SURFACE);label(c,value,rx+rw-113,y+15,97,WHITE);
         }
-        label(c,"Appearance changes are applied immediately.",rx+9,panelY+panelH-33,rw-22,MUTED);
+        c.disableScissor();label(c,"Scroll for more visual options",rx+9,panelY+panelH-25,rw-22,MUTED);
     }
     private double editorScale(){return Math.min((rightW()-18.0)/Math.max(1,width),(contentH()-4.0)/Math.max(1,height));}
     private void renderEditor(DrawContext c,int mx,int my){
@@ -276,7 +312,7 @@ public final class LexyScreen extends Screen {
         c.enableScissor(x,y,x+w,y+h);
         int fallback=8;
         for(int i=0;i<LexyClient.MODULES.size();i++){
-            var m=LexyClient.MODULES.get(i);if(!LexyClient.enabled.getOrDefault(m.id(),false))continue;
+            var m=LexyClient.MODULES.get(i);if(!m.drawInHud()||!LexyClient.enabled.getOrDefault(m.id(),false))continue;
             int px=x+(int)Math.round(LexyClient.positions.getOrDefault(m.id(),8)*scale);
             int py=y+(int)Math.round(LexyClient.positions.getOrDefault(m.id()+".y",fallback)*scale);
             int ww=Math.min(177,w-15);
@@ -299,7 +335,7 @@ public final class LexyScreen extends Screen {
             if(inside(mx,my,x+w-60,y+h-27,55,22)){LexyClient.positions.clear();LexyClient.save();return true;}
             int fallback=8;double scale=editorScale();
             for(int i=0;i<LexyClient.MODULES.size();i++){
-                var m=LexyClient.MODULES.get(i);if(!LexyClient.enabled.getOrDefault(m.id(),false))continue;
+                var m=LexyClient.MODULES.get(i);if(!m.drawInHud()||!LexyClient.enabled.getOrDefault(m.id(),false))continue;
                 int px=x+(int)Math.round(LexyClient.positions.getOrDefault(m.id(),8)*scale);
                 int py=y+(int)Math.round(LexyClient.positions.getOrDefault(m.id()+".y",fallback)*scale);
                 if(inside(mx,my,px,py,Math.min(177,w-15),19)){selected=i;dragging=true;dragDX=(int)mx-px;dragDY=(int)my-py;return true;}
@@ -310,6 +346,11 @@ public final class LexyScreen extends Screen {
         int rx=rightX(),rw=rightW();
         if(modular()){
             int yy=contentY();int cols=columns();
+            if(inside(mx,my,rx,panelY+panelH-42,rw,22)){
+                if(mx<rx+65)scroll=Math.max(0,scroll-rowsVisible());
+                else if(mx>rx+rw-65)scroll=Math.min(maxScroll(filtered().size()),scroll+rowsVisible());
+                return true;
+            }
             if(inside(mx,my,rx,yy,rw,contentH())){
                 int cw=rw/cols;int col=(int)(mx-rx)/cw,row=(int)(my-yy)/ROW_H;
                 int i=(row+scroll)*cols+col;List<LexyClient.Module> list=filtered();
@@ -374,19 +415,34 @@ public final class LexyScreen extends Screen {
                 int idx=scroll+(int)(my-listY)/31;
                 if(idx<player.tracks().size()){player.play(idx);return true;}
             }
+        }else if(tab==10){
+            int yy=panelY+113;int row=48;
+            int visible=Math.min(6,Math.max(1,(panelY+panelH-44-yy)/row));
+            for(int i=scroll;i<Math.min(6,scroll+visible);i++)if(inside(mx,my,rx+7,yy+(i-scroll)*row,rw-16,42)){
+                switch(i){case 0->LexyClient.enabled.put("AutoTotem",!LexyClient.enabled.getOrDefault("AutoTotem",false));
+                    case 1->AutoTotem.onlyWhenEmpty=!AutoTotem.onlyWhenEmpty;
+                    case 2->AutoTotem.lowHealthOnly=!AutoTotem.lowHealthOnly;
+                    case 3->AutoTotem.healthThreshold=AutoTotem.healthThreshold>=20?2:AutoTotem.healthThreshold+2;
+                    case 4->AutoTotem.intervalTicks=AutoTotem.intervalTicks>=30?2:AutoTotem.intervalTicks+2;
+                    case 5->AutoTotem.notify=!AutoTotem.notify;}
+                LexyClient.save();return true;
+            }
         }else if(tab==9){
             int yy=panelY+86;
             for(int i=0;i<LexyClient.ACCENTS.length;i++)if(inside(mx,my,rx+8+i*55,yy,45,28)){
                 LexyClient.accentChoice=i;LexyClient.save();return true;
             }
-            int base=yy+45;
-            for(int i=0;i<6;i++)if(inside(mx,my,rx+7,base+i*44,rw-15,39)){
+            int base=yy+45;int visibleCount=Math.max(1,(panelY+panelH-45-base)/44);
+            for(int i=scroll;i<Math.min(9,scroll+visibleCount);i++)if(inside(mx,my,rx+7,base+(i-scroll)*44,rw-15,39)){
                 switch(i){case 0->LexyClient.hudBackground=!LexyClient.hudBackground;
                     case 1->LexyClient.hudShadow=!LexyClient.hudShadow;
                     case 2->LexyClient.compactHud=!LexyClient.compactHud;
                     case 3->LexyClient.spotifyHud=!LexyClient.spotifyHud;
                     case 4->LexyClient.hudOpacity=LexyClient.hudOpacity>=245?65:LexyClient.hudOpacity+30;
-                    case 5->LexyClient.hudSpacing=LexyClient.hudSpacing>=33?18:LexyClient.hudSpacing+3;}
+                    case 5->LexyClient.hudSpacing=LexyClient.hudSpacing>=33?18:LexyClient.hudSpacing+3;
+                    case 6->LexyClient.lowHealthThreshold=LexyClient.lowHealthThreshold>=20?2:LexyClient.lowHealthThreshold+2;
+                    case 7->LexyClient.armorWarnPercent=LexyClient.armorWarnPercent>=65?5:LexyClient.armorWarnPercent+5;
+                    case 8->LexyClient.hudTextColor=(LexyClient.hudTextColor+1)%3;}
                 LexyClient.save();return true;
             }
         }
@@ -408,12 +464,14 @@ public final class LexyScreen extends Screen {
         if(inside(mx,my,panelX+7,panelY+65,sidebarW-8,panelH-117)){
             navScroll=Math.max(0,Math.min(navLimit(),navScroll-(int)Math.signum(amount)*2));return true;
         }
-        if(inside(mx,my,rightX(),contentY(),rightW(),contentH())||tab==6||tab==7||tab==8){
+        if(inside(mx,my,rightX(),contentY(),rightW(),contentH())||tab==6||tab==7||tab==8||tab==9||tab==10){
             int max=0;
             if(modular())max=maxScroll(filtered().size());
             else if(tab==6)max=Math.max(0,OptimizationManager.OPTIONS.size()-Math.max(1,(panelY+panelH-35-(panelY+115))/48));
             else if(tab==7)max=Math.max(0,SpotifyController.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+292))/32));
             else if(tab==8)max=Math.max(0,LocalMusicPlayer.INSTANCE.tracks().size()-Math.max(1,(panelY+panelH-27-(panelY+248))/31));
+            else if(tab==9)max=Math.max(0,9-Math.max(1,(panelY+panelH-45-(panelY+131))/44));
+            else if(tab==10)max=Math.max(0,6-Math.max(1,(panelY+panelH-43-(panelY+113))/48));
             scroll=Math.max(0,Math.min(max,scroll-(int)Math.signum(amount)*2));return true;
         }return super.mouseScrolled(mx,my,amount);
     }

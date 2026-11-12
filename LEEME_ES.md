@@ -1,4 +1,4 @@
-# Lexy Client 1.4.0 — Blue Edition
+# LexyClient 1.5.0 — Blue Edition
 
 ## Cambios en esta entrega
 - `Shift derecho`: abre la GUI desde Minecraft (atajo real registrado con Fabric).

@@ -2,9 +2,19 @@
   "schemaVersion": 1,
   "id": "lexy-client",
   "version": "${version}",
-  "name": "Lexy Client",
-  "description": "Graphite/blue BoxPvP client with configurable HUDs, real FPS presets, Spotify Connect control, and in-process local music playback for Minecraft 1.20.1.",
+  "name": "LexyClient",
+  "description": "LexyClient Blue Edition for BoxPvP: searchable module browser, real AutoTotem inventory swaps, configurable HUDs, FPS presets, Spotify controls and local audio.",
   "environment": "client",
-  "entrypoints": {"client": ["com.lexy.client.LexyClient"]},
-  "depends": {"fabricloader": ">=0.15.0", "minecraft": "~1.20.1", "java": ">=17", "fabric-api": "*"}
+  "entrypoints": {
+    "client": [
+      "com.lexy.client.LexyClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  },
+  "icon": "assets/lexy-client/icon.png"
 }

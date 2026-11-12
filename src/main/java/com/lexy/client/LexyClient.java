@@ -30,6 +30,8 @@ public final class LexyClient implements ClientModInitializer {
  public static final Map<String, Integer> positions = new LinkedHashMap<>();
  public static MinecraftClient mc;
  public static int hudOpacity = 215, hudSpacing = 21, accentChoice = 0;
+ public static int lowHealthThreshold = 8, armorWarnPercent = 15, hudTextColor = 0;
+ public static final net.minecraft.util.Identifier LOGO = new net.minecraft.util.Identifier("lexy-client", "textures/gui/logo.png");
  public static boolean hudBackground = true, hudShadow = true, compactHud = false, spotifyHud = true;
  public static String spotifyClientId = "";
  public static int localMusicVolume=65; public static boolean localMusicLoop=false;
@@ -44,8 +46,9 @@ public final class LexyClient implements ClientModInitializer {
  private static java.util.UUID lastAttacked; private static boolean wasDead;
  private static final int WHITE = 0xFFF2F7FF, BLUE = 0xFF409AFF;
  private static final Path CONFIG = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("lexy-client.json");
- public record Module(String id, String category, Supplier<String> value, boolean defaultOn) {}
- private static void add(String category, String id, Supplier<String> value, boolean on) { MODULES.add(new Module(id, category, value, on)); enabled.put(id,on); }
+ public record Module(String id, String category, Supplier<String> value, boolean defaultOn, boolean drawInHud) {}
+ private static void add(String category, String id, Supplier<String> value, boolean on) { MODULES.add(new Module(id, category, value, on, true)); enabled.put(id,on); }
+ private static void addAction(String category, String id, Supplier<String> value, boolean on) { MODULES.add(new Module(id, category, value, on, false)); enabled.put(id,on); }
  private static String fmt(double n) {return String.format(Locale.ROOT,"%.1f",n);}
  private static PlayerEntity p(){return mc == null ? null : mc.player;}
  private static String inventory(net.minecraft.item.Item item) {PlayerEntity p=p();if(p==null)return "0";int n=0;for(int i=0;i<p.getInventory().size();i++){ItemStack s=p.getInventory().getStack(i);if(s.isOf(item))n+=s.getCount();}return Integer.toString(n);}
@@ -61,6 +64,9 @@ public final class LexyClient implements ClientModInitializer {
  private static String speed(){return p()==null?"-":fmt(Math.sqrt(Math.pow(p().getX()-p().prevX,2)+Math.pow(p().getZ()-p().prevZ,2))*20)+" b/s";}
  private static String durability(){if(p()==null)return "-";ItemStack s=p().getMainHandStack();return s.isDamageable()?(s.getMaxDamage()-s.getDamage())+" / "+s.getMaxDamage():"-";}
  private static void register(){
+  addAction("Combat", "AutoTotem", AutoTotem::status, false);
+  add("HUD", "AutoTotem Swaps", () -> String.valueOf(AutoTotem.swaps()), false);
+  add("Utilities", "Totem Stock Warning", () -> Integer.parseInt(inventory(Items.TOTEM_OF_UNDYING)) <= 2 ? "LOW TOTEMS" : "OK", false);
   add("Combat","Target Name",LexyClient::target,true);
   add("Combat","Target Health",LexyClient::targetHealth,true);
   add("Combat","Target Distance",LexyClient::targetDistance,true);
@@ -103,7 +109,7 @@ public final class LexyClient implements ClientModInitializer {
   add("Statistics","Session Deaths",()->Integer.toString(deaths),true);
   add("Statistics","Possible K/D",()->fmt((double)kills/Math.max(1,deaths)),false);
   add("Statistics","Health Drop Events",()->Integer.toString(damageEvents),false);
-  add("Utilities","Low Health Alert",()->p()!=null&&p().getHealth()<=8?"LOW HEALTH!":"OK",true);
+  add("Utilities","Low Health Alert",()->p()!=null&&p().getHealth()<=lowHealthThreshold?"LOW HEALTH!":"OK",true);
   add("Utilities","Low Helmet Alert",()->armorAlert(3),true);
   add("Utilities","Low Chest Alert",()->armorAlert(2),true);
   add("Utilities","Low Legs Alert",()->armorAlert(1),true);
@@ -147,16 +153,16 @@ public final class LexyClient implements ClientModInitializer {
   add("Music","Music Volume",()->LocalMusicPlayer.INSTANCE.volume()+"%",false);
 
  }
- private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=15?"REPAIR!":"OK";}
- @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
- ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new LexyScreen(true));while(spotifyKey.wasPressed())client.setScreen(new LexyScreen(false,7));if(client.player==null){lastHealth=-1;return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
+ private static String armorAlert(int slot){if(p()==null)return "-";ItemStack s=p().getInventory().getArmorStack(slot);if(s.isEmpty())return "MISSING";if(!s.isDamageable())return "OK";return (100*(s.getMaxDamage()-s.getDamage())/s.getMaxDamage())<=armorWarnPercent?"REPAIR!":"OK";}
+ @Override public void onInitializeClient(){mc=MinecraftClient.getInstance();sessionStart=System.currentTimeMillis();register();load();SpotifyController.INSTANCE.setClientId(spotifyClientId);LocalMusicPlayer.INSTANCE.setVolume(localMusicVolume);TitleBranding.register();if(localMusicLoop)LocalMusicPlayer.INSTANCE.toggleLoop();guiKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Modules",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_SHIFT,"Lexy Client"));hudKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: HUD Editor",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_RIGHT_CONTROL,"Lexy Client"));spotifyKey=KeyBindingHelper.registerKeyBinding(new KeyBinding("Lexy: Spotify",InputUtil.Type.KEYSYM,GLFW.GLFW_KEY_UNKNOWN,"Lexy Client"));
+ ClientTickEvents.END_CLIENT_TICK.register(client->{ticks++;while(guiKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false));while(hudKey.wasPressed())client.setScreen(new LexyScreen(true));while(spotifyKey.wasPressed())if(client.currentScreen==null)client.setScreen(new LexyScreen(false,7));AutoTotem.tick(client);if(client.player==null){lastHealth=-1;return;}if(lastHealth>=0&&client.player.getHealth()<lastHealth)damageEvents++;lastHealth=(int)client.player.getHealth();if(client.player.isDead()&&!wasDead)deaths++;wasDead=client.player.isDead();if(lastAttacked!=null&&ticks-lastHitTick>100)lastAttacked=null;if(lastAttacked!=null&&client.world!=null){for(Entity entity:client.world.getEntities()){if(entity.getUuid().equals(lastAttacked)&&entity instanceof LivingEntity living&&living.isDead()){kills++;lastAttacked=null;break;}}}if(combatTicks>0)combatTicks++;if(ticks-lastHitTick>60)combo=0;});
  net.fabricmc.fabric.api.event.player.AttackEntityCallback.EVENT.register((player,world,hand,entity,hitResult)->{if(world.isClient&&player==mc.player){swings++;hits++;combo++;longestCombo=Math.max(combo,longestCombo);lastHitTick=ticks;combatTicks=1;lastTarget=entity.getName().getString();lastAttacked=entity.getUuid();}return net.minecraft.util.ActionResult.PASS;});
  HudRenderCallback.EVENT.register((context,delta)->{
   if(mc.player==null||mc.options.hudHidden||mc.currentScreen instanceof LexyScreen)return;
   int defaultY=8;
   int sw=mc.getWindow().getScaledWidth(), sh=mc.getWindow().getScaledHeight();
   for(Module m:MODULES){
-   if(!enabled.getOrDefault(m.id(),false)||(!spotifyHud&&m.category().equals("Music")))continue;
+   if(!m.drawInHud()||!enabled.getOrDefault(m.id(),false)||(!spotifyHud&&m.category().equals("Music")))continue;
    String value;
    try{value=m.value().get();}catch(RuntimeException e){value="Unavailable";}
    String label=m.id();
@@ -168,8 +174,8 @@ public final class LexyClient implements ClientModInitializer {
    context.fill(x,yy,x+3,yy+(compactHud?15:18),accent());
    if(hudBackground)context.fill(x,yy+(compactHud?14:17),x+w,yy+(compactHud?15:18),0xFF34465B);
    int labelColor=m.category().equals("Utilities")&&(value.contains("!")||value.equals("REPAIR!")||value.equals("MISSING"))?0xFFFF707B:WHITE;
-   if(hudShadow)context.drawTextWithShadow(mc.textRenderer,output,x+10,yy+(compactHud?3:5),labelColor);
-   else context.drawText(mc.textRenderer,output,x+10,yy+(compactHud?3:5),labelColor,false);
+   if(hudShadow)context.drawTextWithShadow(mc.textRenderer,output,x+10,yy+(compactHud?3:5),hudTextColor==1?accent():hudTextColor==2?0xFFD5DFED:labelColor);
+   else context.drawText(mc.textRenderer,output,x+10,yy+(compactHud?3:5),(hudTextColor==1?accent():hudTextColor==2?0xFFD5DFED:labelColor),false);
    defaultY+=hudSpacing;
   }
  });
@@ -179,6 +185,8 @@ public final class LexyClient implements ClientModInitializer {
  JsonObject style=new JsonObject();style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
  style.addProperty("accentChoice",accentChoice);style.addProperty("hudBackground",hudBackground);
  style.addProperty("hudShadow",hudShadow);style.addProperty("compactHud",compactHud);style.addProperty("spotifyHud",spotifyHud);
+ style.addProperty("lowHealthThreshold",lowHealthThreshold);style.addProperty("armorWarnPercent",armorWarnPercent);style.addProperty("hudTextColor",hudTextColor);
+ JsonObject totem=new JsonObject();totem.addProperty("onlyWhenEmpty",AutoTotem.onlyWhenEmpty);totem.addProperty("lowHealthOnly",AutoTotem.lowHealthOnly);totem.addProperty("healthThreshold",AutoTotem.healthThreshold);totem.addProperty("intervalTicks",AutoTotem.intervalTicks);totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
  root.add("style",style);root.addProperty("spotifyClientId",spotifyClientId);
  root.addProperty("localMusicVolume",LocalMusicPlayer.INSTANCE.volume());root.addProperty("localMusicLoop",LocalMusicPlayer.INSTANCE.looping());
  Files.writeString(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
@@ -191,7 +199,16 @@ public final class LexyClient implements ClientModInitializer {
  if(style.has("hudShadow"))hudShadow=style.get("hudShadow").getAsBoolean();
  if(style.has("compactHud"))compactHud=style.get("compactHud").getAsBoolean();
  if(style.has("spotifyHud"))spotifyHud=style.get("spotifyHud").getAsBoolean();
+ if(style.has("lowHealthThreshold"))lowHealthThreshold=Math.max(2,Math.min(20,style.get("lowHealthThreshold").getAsInt()));
+ if(style.has("armorWarnPercent"))armorWarnPercent=Math.max(5,Math.min(70,style.get("armorWarnPercent").getAsInt()));
+ if(style.has("hudTextColor"))hudTextColor=Math.floorMod(style.get("hudTextColor").getAsInt(),3);
  }
+ if(root.has("autoTotem")){JsonObject t=root.getAsJsonObject("autoTotem");
+ if(t.has("onlyWhenEmpty"))AutoTotem.onlyWhenEmpty=t.get("onlyWhenEmpty").getAsBoolean();
+ if(t.has("lowHealthOnly"))AutoTotem.lowHealthOnly=t.get("lowHealthOnly").getAsBoolean();
+ if(t.has("healthThreshold"))AutoTotem.healthThreshold=Math.max(2,Math.min(20,t.get("healthThreshold").getAsInt()));
+ if(t.has("intervalTicks"))AutoTotem.intervalTicks=Math.max(2,Math.min(30,t.get("intervalTicks").getAsInt()));
+ if(t.has("notify"))AutoTotem.notify=t.get("notify").getAsBoolean();}
  if(root.has("spotifyClientId"))spotifyClientId=root.get("spotifyClientId").getAsString();
  if(root.has("localMusicVolume"))localMusicVolume=Math.max(0,Math.min(100,root.get("localMusicVolume").getAsInt()));
  if(root.has("localMusicLoop"))localMusicLoop=root.get("localMusicLoop").getAsBoolean();
