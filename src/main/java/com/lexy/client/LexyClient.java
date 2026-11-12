@@ -40,6 +40,31 @@ public final class LexyClient implements ClientModInitializer {
  public static final int[] ACCENTS = {0xFF3B82F6,0xFF60A5FA,0xFF2563EB,0xFF22D3EE};
  public static int accent(){return ACCENTS[Math.floorMod(accentChoice,ACCENTS.length)];}
  public static int moduleCount(){return MODULES.size();}
+ public static boolean hudMinimal = false;
+ public static int hudPreset = 1;
+ public static void applyHudPreset(int preset){
+  hudPreset = Math.max(0, Math.min(2, preset));
+  Set<String> keep = switch(preset){
+   case 0 -> Set.of("FPS", "Ping");
+   case 1 -> Set.of("FPS", "Ping", "Health", "Totems", "Low Health Alert");
+   default -> Set.of("FPS", "Ping", "Health", "Totems", "Mainhand Durability", "Low Health Alert", "Speed", "XYZ X", "XYZ Y", "XYZ Z");
+  };
+  for(Module m:MODULES) if(m.drawInHud()) enabled.put(m.id(),keep.contains(m.id()));
+  compactHud = true;hudMinimal = preset == 0;
+  positions.clear();save();
+ }
+
+ private static final int CONFIG_VERSION = 190;
+ private static void applyCompactDefaults(){
+  Set<String> keep = Set.of("Health","Totems","FPS","Ping","Low Health Alert");
+  for(Module module : MODULES){
+   if(module.drawInHud()) enabled.put(module.id(), keep.contains(module.id()));
+  }
+  enabled.put("AutoTotem", enabled.getOrDefault("AutoTotem", false));
+  compactHud = true;
+  hudPreset = 1;
+  hudSpacing = Math.min(hudSpacing, 19);
+ }
 
  private static KeyBinding guiKey, hudKey, spotifyKey;
  private static long ticks, combatTicks, lastHitTick, sessionStart;
@@ -60,19 +85,19 @@ public final class LexyClient implements ClientModInitializer {
  private static String targetHealth(){if(mc.crosshairTarget instanceof EntityHitResult hit && hit.getEntity() instanceof LivingEntity e)return fmt(e.getHealth())+" / "+fmt(e.getMaxHealth());return "-";}
  private static String targetDistance(){if(mc.crosshairTarget instanceof EntityHitResult hit && p()!=null)return fmt(Math.sqrt(p().squaredDistanceTo(hit.getEntity())))+"m";return "-";}
  private static String status(){return p()==null?"-":fmt(p().getHealth())+" / "+fmt(p().getMaxHealth());}
- private static String ping(){if(mc.getNetworkHandler()==null||p()==null)return "-";var entry=mc.getNetworkHandler().getPlayerListEntry(p().getUuid());return entry==null?"-":entry.getLatency()+"ms";}
+ private static String ping(){if(mc.getNetworkHandler()==null||p()==null)return "-";var entry=mc.getNetworkHandler().getPlayerListEntry(p().getUuid());return entry==null?"-":entry.getLatency()+" ms";}
  private static String worldTime(){return mc.world==null?"-":Long.toString(mc.world.getTimeOfDay()%24000);}
  private static String xyz(int i){return p()==null?"-":Integer.toString(i==0?p().getBlockX():i==1?p().getBlockY():p().getBlockZ());}
  private static String speed(){return p()==null?"-":fmt(Math.sqrt(Math.pow(p().getX()-p().prevX,2)+Math.pow(p().getZ()-p().prevZ,2))*20)+" b/s";}
  private static String durability(){if(p()==null)return "-";ItemStack s=p().getMainHandStack();return s.isDamageable()?(s.getMaxDamage()-s.getDamage())+" / "+s.getMaxDamage():"-";}
  private static void register(){
-  addAction("Combat", "AutoTotem", AutoTotem::status, false);
-  add("HUD", "AutoTotem Swaps", () -> String.valueOf(AutoTotem.swaps()), false);
+  addAction("AutoTotem", "AutoTotem", AutoTotem::status, false);
+  add("AutoTotem", "AutoTotem Swaps", () -> String.valueOf(AutoTotem.swaps()), false);
   add("Utilities", "Totem Stock Warning", () -> Integer.parseInt(inventory(Items.TOTEM_OF_UNDYING)) <= 2 ? "LOW TOTEMS" : "OK", false);
-  add("Combat","Target Name",LexyClient::target,true);
-  add("Combat","Target Health",LexyClient::targetHealth,true);
-  add("Combat","Target Distance",LexyClient::targetDistance,true);
-  add("Combat","Attack Chain",()->Integer.toString(combo),true);
+  add("Combat","Target Name",LexyClient::target,false);
+  add("Combat","Target Health",LexyClient::targetHealth,false);
+  add("Combat","Target Distance",LexyClient::targetDistance,false);
+  add("Combat","Attack Chain",()->Integer.toString(combo),false);
   add("Combat","Longest Attack Chain",()->Integer.toString(longestCombo),false);
   add("Combat","Attack Attempts",()->Integer.toString(hits),false);
   add("Combat","Targeted Swings",()->Integer.toString(swings),false);
@@ -80,24 +105,24 @@ public final class LexyClient implements ClientModInitializer {
   add("Combat","Combat Timer",()->combatTicks==0?"Idle":(combatTicks/20)+"s",false);
   add("Combat","Last Attacked",()->lastTarget,false);
   add("HUD","Health",LexyClient::status,true);
-  add("HUD","Absorption",()->p()==null?"-":fmt(p().getAbsorptionAmount()),true);
+  add("HUD","Absorption",()->p()==null?"-":fmt(p().getAbsorptionAmount()),false);
   add("HUD","Food",()->p()==null?"-":Integer.toString(p().getHungerManager().getFoodLevel()),false);
   add("HUD","Saturation",()->p()==null?"-":fmt(p().getHungerManager().getSaturationLevel()),false);
-  add("HUD","Helmet",()->armor(3),true);
-  add("HUD","Chestplate",()->armor(2),true);
-  add("HUD","Leggings",()->armor(1),true);
-  add("HUD","Boots",()->armor(0),true);
+  add("HUD","Helmet",()->armor(3),false);
+  add("HUD","Chestplate",()->armor(2),false);
+  add("HUD","Leggings",()->armor(1),false);
+  add("HUD","Boots",()->armor(0),false);
   add("HUD","Mainhand Durability",LexyClient::durability,true);
   add("HUD","Totems",()->inventory(Items.TOTEM_OF_UNDYING),true);
-  add("HUD","Ender Pearls",()->inventory(Items.ENDER_PEARL),true);
-  add("HUD","Golden Apples",()->inventory(Items.GOLDEN_APPLE),true);
+  add("HUD","Ender Pearls",()->inventory(Items.ENDER_PEARL),false);
+  add("HUD","Golden Apples",()->inventory(Items.GOLDEN_APPLE),false);
   add("HUD","Enchanted Apples",()->inventory(Items.ENCHANTED_GOLDEN_APPLE),false);
   add("HUD","Experience Level",()->p()==null?"-":Integer.toString(p().experienceLevel),false);
-  add("HUD","Effect 1",()->effect(0),true);
+  add("HUD","Effect 1",()->effect(0),false);
   add("HUD","Effect 2",()->effect(1),false);
   add("HUD","Effect 3",()->effect(2),false);
   add("HUD","Effect 4",()->effect(3),false);
-  add("HUD","FPS",()->mc.getCurrentFps()+" FPS",true);
+  add("HUD","FPS",()->mc.getCurrentFps()+"",true);
   add("HUD","Ping",LexyClient::ping,true);
   add("HUD","XYZ X",()->xyz(0),false);
   add("HUD","XYZ Y",()->xyz(1),false);
@@ -106,16 +131,16 @@ public final class LexyClient implements ClientModInitializer {
   add("HUD","Facing",()->p()==null?"-":p().getHorizontalFacing().asString(),false);
   add("HUD","Biome",()->p()==null||mc.world==null?"-":mc.world.getBiome(p().getBlockPos()).getKey().map(k->k.getValue().toString()).orElse("unknown"),false);
   add("HUD","World Time",LexyClient::worldTime,false);
-  add("Statistics","Session Time",()->(System.currentTimeMillis()-sessionStart)/1000+"s",true);
-  add("Statistics","Possible Kills",()->Integer.toString(kills),true);
-  add("Statistics","Session Deaths",()->Integer.toString(deaths),true);
+  add("Statistics","Session Time",()->(System.currentTimeMillis()-sessionStart)/1000+"s",false);
+  add("Statistics","Possible Kills",()->Integer.toString(kills),false);
+  add("Statistics","Session Deaths",()->Integer.toString(deaths),false);
   add("Statistics","Possible K/D",()->fmt((double)kills/Math.max(1,deaths)),false);
   add("Statistics","Health Drop Events",()->Integer.toString(damageEvents),false);
   add("Utilities","Low Health Alert",()->p()!=null&&p().getHealth()<=lowHealthThreshold?"LOW HEALTH!":"OK",true);
-  add("Utilities","Low Helmet Alert",()->armorAlert(3),true);
-  add("Utilities","Low Chest Alert",()->armorAlert(2),true);
-  add("Utilities","Low Legs Alert",()->armorAlert(1),true);
-  add("Utilities","Low Boots Alert",()->armorAlert(0),true);
+  add("Utilities","Low Helmet Alert",()->armorAlert(3),false);
+  add("Utilities","Low Chest Alert",()->armorAlert(2),false);
+  add("Utilities","Low Legs Alert",()->armorAlert(1),false);
+  add("Utilities","Low Boots Alert",()->armorAlert(0),false);
   add("Combat","Attack Cooldown",()->p()==null?"-":Math.round(p().getAttackCooldownProgress(0)*100)+"%",false);
   add("Combat","Target Armor Points",()->mc.crosshairTarget instanceof EntityHitResult h && h.getEntity() instanceof LivingEntity e ? String.valueOf(e.getArmor()) : "-",false);
   add("Combat","Target Mainhand",()->mc.crosshairTarget instanceof EntityHitResult h && h.getEntity() instanceof LivingEntity e ? e.getMainHandStack().getName().getString() : "-",false);
@@ -165,18 +190,18 @@ public final class LexyClient implements ClientModInitializer {
  });
  net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents.CLIENT_STOPPING.register(client->{save();SpotifyController.INSTANCE.shutdown();LocalMusicPlayer.INSTANCE.shutdown();});
  }
- public static void save(){try{Files.createDirectories(CONFIG.getParent());JsonObject root=new JsonObject();JsonObject mods=new JsonObject();enabled.forEach(mods::addProperty);root.add("modules",mods);JsonObject coords=new JsonObject();positions.forEach(coords::addProperty);root.add("positions",coords);
+ public static void save(){try{Files.createDirectories(CONFIG.getParent());JsonObject root=new JsonObject();JsonObject mods=new JsonObject();enabled.forEach(mods::addProperty);root.add("modules",mods);JsonObject coords=new JsonObject();positions.forEach(coords::addProperty);root.add("positions",coords);root.addProperty("configVersion",CONFIG_VERSION);
  JsonObject style=new JsonObject();style.addProperty("hudOpacity",hudOpacity);style.addProperty("hudSpacing",hudSpacing);
  style.addProperty("accentChoice",accentChoice);
  style.addProperty("menuScalePercent",menuScalePercent);style.addProperty("hudScalePercent",hudScalePercent);
  style.addProperty("hudGridSize",hudGridSize);style.addProperty("hudGridSnap",hudGridSnap);style.addProperty("hudShowGrid",hudShowGrid);style.addProperty("hudBackground",hudBackground);
- style.addProperty("hudShadow",hudShadow);style.addProperty("compactHud",compactHud);style.addProperty("spotifyHud",spotifyHud);
+ style.addProperty("hudPreset",hudPreset);style.addProperty("hudMinimal",hudMinimal);style.addProperty("hudShadow",hudShadow);style.addProperty("compactHud",compactHud);style.addProperty("spotifyHud",spotifyHud);
  style.addProperty("lowHealthThreshold",lowHealthThreshold);style.addProperty("armorWarnPercent",armorWarnPercent);style.addProperty("hudTextColor",hudTextColor);
  JsonObject totem=new JsonObject();totem.addProperty("onlyWhenEmpty",AutoTotem.onlyWhenEmpty);totem.addProperty("lowHealthOnly",AutoTotem.lowHealthOnly);totem.addProperty("healthThreshold",AutoTotem.healthThreshold);totem.addProperty("intervalTicks",AutoTotem.intervalTicks);totem.addProperty("notify",AutoTotem.notify);root.add("autoTotem",totem);
  root.add("style",style);root.addProperty("spotifyClientId",spotifyClientId);
  root.addProperty("localMusicVolume",LocalMusicPlayer.INSTANCE.volume());root.addProperty("localMusicLoop",LocalMusicPlayer.INSTANCE.looping());
  Files.writeString(CONFIG,new GsonBuilder().setPrettyPrinting().create().toJson(root));}catch(IOException e){System.err.println("Lexy config save failed: "+e);}}
- public static void load(){if(!Files.exists(CONFIG))return;try{JsonObject root=JsonParser.parseString(Files.readString(CONFIG)).getAsJsonObject();if(root.has("modules"))for(var e:root.getAsJsonObject("modules").entrySet())if(enabled.containsKey(e.getKey()))enabled.put(e.getKey(),e.getValue().getAsBoolean());if(root.has("positions"))for(var e:root.getAsJsonObject("positions").entrySet())positions.put(e.getKey(),e.getValue().getAsInt());
+ public static void load(){if(!Files.exists(CONFIG)){applyCompactDefaults();return;}try{JsonObject root=JsonParser.parseString(Files.readString(CONFIG)).getAsJsonObject();int configVersion=root.has("configVersion")?root.get("configVersion").getAsInt():0;if(root.has("modules"))for(var e:root.getAsJsonObject("modules").entrySet())if(enabled.containsKey(e.getKey()))enabled.put(e.getKey(),e.getValue().getAsBoolean());if(root.has("positions"))for(var e:root.getAsJsonObject("positions").entrySet())positions.put(e.getKey(),e.getValue().getAsInt());
  if(root.has("style")){JsonObject style=root.getAsJsonObject("style");
  if(style.has("hudOpacity"))hudOpacity=Math.max(50,Math.min(245,style.get("hudOpacity").getAsInt()));
  if(style.has("hudSpacing"))hudSpacing=Math.max(16,Math.min(36,style.get("hudSpacing").getAsInt()));
@@ -187,6 +212,8 @@ public final class LexyClient implements ClientModInitializer {
  if(style.has("hudGridSnap"))hudGridSnap=style.get("hudGridSnap").getAsBoolean();
  if(style.has("hudShowGrid"))hudShowGrid=style.get("hudShowGrid").getAsBoolean();
  if(style.has("hudBackground"))hudBackground=style.get("hudBackground").getAsBoolean();
+ if(style.has("hudPreset"))hudPreset=Math.max(0,Math.min(2,style.get("hudPreset").getAsInt()));
+ if(style.has("hudMinimal"))hudMinimal=style.get("hudMinimal").getAsBoolean();
  if(style.has("hudShadow"))hudShadow=style.get("hudShadow").getAsBoolean();
  if(style.has("compactHud"))compactHud=style.get("compactHud").getAsBoolean();
  if(style.has("spotifyHud"))spotifyHud=style.get("spotifyHud").getAsBoolean();
@@ -203,5 +230,6 @@ public final class LexyClient implements ClientModInitializer {
  if(root.has("spotifyClientId"))spotifyClientId=root.get("spotifyClientId").getAsString();
  if(root.has("localMusicVolume"))localMusicVolume=Math.max(0,Math.min(100,root.get("localMusicVolume").getAsInt()));
  if(root.has("localMusicLoop"))localMusicLoop=root.get("localMusicLoop").getAsBoolean();
- }catch(Exception e){System.err.println("Lexy config load failed: "+e);}}
+ if(configVersion < 170) applyCompactDefaults();
+ }catch(Exception e){System.err.println("Lexy config load failed: "+e);applyCompactDefaults();}}
 }

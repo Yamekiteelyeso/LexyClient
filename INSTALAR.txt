@@ -1,0 +1,5 @@
+LexyClient 1.9.0 para Minecraft Java 1.20.1 / Fabric.
+Instalar Fabric Loader y Fabric API. Copiar el archivo lexy-client-1.9.0.jar en mods.
+En Pojav, usar Java 17 y perfil Fabric 1.20.1.
+Abrir LexyClient desde el menu de pausa (boton LexyClient) o Shift derecho.
+Spotify: copiar Client ID de Spotify Dashboard y registrar http://127.0.0.1:43871/callback.

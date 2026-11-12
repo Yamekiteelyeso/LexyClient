@@ -3,7 +3,7 @@
   "id": "lexy-client",
   "version": "${version}",
   "name": "LexyClient",
-  "description": "LexyClient Blue Edition for BoxPvP: searchable module browser, real AutoTotem inventory swaps, configurable HUDs, FPS presets, Spotify controls and local audio.",
+  "description": "LexyClient Blue Edition for PojavLauncher + PC responsive HUD and GUI, Spotify PKCE login, AutoTotem settings, performance presets and local audio.",
   "environment": "client",
   "entrypoints": {
     "client": [

@@ -4,7 +4,8 @@ import net.fabricmc.loader.api.FabricLoader;
 
 import javax.sound.sampled.*;
 import java.io.IOException;
-import java.awt.Desktop;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Util;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -53,9 +54,13 @@ public final class LocalMusicPlayer {
     public void openFolder() {
         try {
             Files.createDirectories(folder);
-            if (!Desktop.isDesktopSupported()) throw new IOException("File manager unavailable");
-            Desktop.getDesktop().open(folder.toFile());
-        } catch (Exception ex) { status = "Open folder manually: " + folder.toAbsolutePath(); }
+            Util.getOperatingSystem().open(folder.toUri());
+            status = "Opening music folder...";
+        } catch (Exception ex) {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc != null) mc.keyboard.setClipboard(folder.toAbsolutePath().toString());
+            status = "Folder path copied: " + folder.toAbsolutePath();
+        }
     }
     public synchronized void play(int index) {
         if (index < 0 || index >= tracks.size()) { status = "Select a track from the list"; return; }

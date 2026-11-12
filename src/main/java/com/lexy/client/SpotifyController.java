@@ -3,7 +3,6 @@ package com.lexy.client;
 import com.google.gson.*;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import java.awt.Desktop;
 import java.io.IOException;
 import java.net.*;
 import java.net.http.*;
@@ -13,6 +12,8 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Util;
 
 /** Spotify Web API/Connect controller. No Spotify audio is downloaded or intercepted. */
 public final class SpotifyController {
@@ -23,7 +24,7 @@ public final class SpotifyController {
     private final ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor(r -> {Thread t=new Thread(r,"Lexy-Spotify-Poll");t.setDaemon(true);return t;});
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(6)).build();
     private final SecureRandom random = new SecureRandom();
-    private volatile String clientId="", accessToken="", refreshToken="", status="Not connected", playing="Nothing playing";
+    private volatile String clientId="", accessToken="", refreshToken="", status="Not connected", playing="Nothing playing", pendingAuthUrl="";
     private volatile boolean paused=true;
     private volatile long expireAt=0;
     private volatile List<Track> tracks=List.of();
@@ -43,6 +44,13 @@ public final class SpotifyController {
     public List<Track> tracks(){return tracks;}
     public List<Device> devices(){return devices;}
     public String activeDevice(){return activeDevice;}
+    public String authUrl(){return pendingAuthUrl;}
+    public void cancelLogin(){stopCallback();pendingAuthUrl="";verifier="";state="";status="Authorization cancelled";}
+    public void copyAuthUrl(){
+        if(pendingAuthUrl.isBlank()){status="Click LOGIN first";return;}
+        try {MinecraftClient.getInstance().keyboard.setClipboard(pendingAuthUrl);status="Spotify login URL copied";}
+        catch(Throwable error){status="Clipboard unavailable on this launcher";}
+    }
     private String randomString(int length){byte[] bytes=new byte[length];random.nextBytes(bytes);return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);}
     private static String enc(String s){return URLEncoder.encode(s,StandardCharsets.UTF_8);}
     private static String shortError(Exception ex){String m=ex.getMessage();return m==null?ex.getClass().getSimpleName():m.substring(0,Math.min(120,m.length()));}
@@ -57,11 +65,18 @@ public final class SpotifyController {
             HttpServer server=HttpServer.create(new InetSocketAddress(InetAddress.getByName("127.0.0.1"),43871),0);
             server.createContext("/callback",this::handleCallback);
             server.setExecutor(executor);server.start();callback=server;
-            String url="https://accounts.spotify.com/authorize?response_type=code&client_id="+enc(clientId)+"&redirect_uri="+enc(REDIRECT)+"&scope="+enc(SCOPES)+"&state="+enc(state)+"&code_challenge_method=S256&code_challenge="+enc(challenge);
-            if(!Desktop.isDesktopSupported())throw new IllegalStateException("No default browser available");
-            Desktop.getDesktop().browse(URI.create(url));
-            status="Approve in your browser...";
-        } catch(Exception ex){stopCallback();status="Connect failed: "+shortError(ex);}
+            pendingAuthUrl="https://accounts.spotify.com/authorize?response_type=code&client_id="+enc(clientId)+"&redirect_uri="+enc(REDIRECT)+"&scope="+enc(SCOPES)+"&state="+enc(state)+"&code_challenge_method=S256&code_challenge="+enc(challenge);
+            try {
+                Util.getOperatingSystem().open(URI.create(pendingAuthUrl));
+                status="Browser opened. Approve Spotify login...";
+            } catch (Throwable openError) {
+                MinecraftClient mc = MinecraftClient.getInstance();
+                try {
+                    if (mc != null) mc.keyboard.setClipboard(pendingAuthUrl);
+                    status="Browser unavailable. Login URL copied to clipboard.";
+                } catch(Throwable clipboardError){status="Browser unavailable. Use COPY LOGIN URL in Spotify tab.";}
+            }
+        } catch(Exception ex){stopCallback();status="Connect failed: "+shortError(ex);} 
     }
     private static Map<String,String> query(String raw){
         HashMap<String,String> out=new HashMap<>();
@@ -69,7 +84,7 @@ public final class SpotifyController {
         return out;
     }
     private void handleCallback(HttpExchange exchange){
-        String result="Lexy Client: Spotify connected. You may close this tab.";
+        String result="Lexy Client: Spotify login complete. Return to Minecraft.";
         try{
             if(!"GET".equals(exchange.getRequestMethod())){result="Invalid request";exchange.sendResponseHeaders(405,-1);return;}
             Map<String,String> q=query(exchange.getRequestURI().getRawQuery());
@@ -79,12 +94,12 @@ public final class SpotifyController {
             else {
                 String code=q.get("code");String authVerifier=verifier;
                 JsonObject token=tokenRequest("grant_type=authorization_code&code="+enc(code)+"&redirect_uri="+enc(REDIRECT)+"&client_id="+enc(clientId)+"&code_verifier="+enc(authVerifier));
-                applyTokens(token);status="Connected to Spotify";
+                applyTokens(token);status="Connected to Spotify";result="Spotify connected successfully. Return to Minecraft.";
             }
             byte[] bytes=("<html><body style='font-family:sans-serif;background:#111827;color:#e0e9ff;padding:40px'><h2>Lexy Client</h2><p>"+result+"</p></body></html>").getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().add("Content-Type","text/html; charset=utf-8");exchange.sendResponseHeaders(200,bytes.length);exchange.getResponseBody().write(bytes);
         }catch(Exception ex){status="Auth error: "+shortError(ex);try{byte[] b="Authentication failed; return to Minecraft".getBytes(StandardCharsets.UTF_8);exchange.sendResponseHeaders(500,b.length);exchange.getResponseBody().write(b);}catch(Exception ignored){}}
-        finally{exchange.close();stopCallback();}
+        finally{exchange.close();stopCallback();pendingAuthUrl="";verifier="";state="";}
     }
     private void stopCallback(){HttpServer old=callback;callback=null;if(old!=null)old.stop(0);}
     private JsonObject tokenRequest(String form) throws Exception {
@@ -178,6 +193,6 @@ public final class SpotifyController {
         } catch(Exception ex){status="Computer selection: "+shortError(ex);}
     }); }
     public void refreshDevices(){executor.submit(()->{try{fetchDevices();status="Devices updated";}catch(Exception ex){status="Devices: "+shortError(ex);}});}
-    public void disconnect(){stopCallback();accessToken="";refreshToken="";expireAt=0;playing="Nothing playing";tracks=List.of();devices=List.of();status="Disconnected";}
+    public void disconnect(){cancelLogin();accessToken="";refreshToken="";expireAt=0;playing="Nothing playing";tracks=List.of();devices=List.of();status="Disconnected";}
     public void shutdown(){disconnect();poller.shutdownNow();executor.shutdownNow();}
 }
