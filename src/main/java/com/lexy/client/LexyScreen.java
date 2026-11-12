@@ -8,8 +8,10 @@ import java.util.*;
 
 /** Handmade graphite/blue dashboard. Each visible control invokes a real setting or API call. */
 public final class LexyScreen extends Screen {
-    private static final int BG=0xFF0C1423, PANEL=0xFF152337, SURFACE=0xFF223650;
-    private static final int OUTLINE=0xFF2D4766, WHITE=0xFFF2F7FF, MUTED=0xFF9AB3CB;
+    private static final int BG=0xFF0A101B, PANEL=0xFF152235, SURFACE=0xFF20334A;
+    private static final int OUTLINE=0xFF334B64, WHITE=0xFFF3F8FF, MUTED=0xFF9FB3CA;
+    private static final int BG_HOVER=0xFF203852, BG_ACTIVE=0xFF1C4268;
+    private static final String[] NAV_SHORT={"ALL","CBT","HUD","STS","UTL","VID","FPS","SPT","MUS","UI","PVP","KEY"};
     private static final String[] TABS={"All Modules","Combat","HUD","Statistics","Utilities","Performance","Optimization","Spotify","Local Music","Appearance","Cheats","Keybinds"};
     private static final int ROW_H=54, NAV_ROW=34;
     private final boolean editor;
@@ -24,6 +26,9 @@ public final class LexyScreen extends Screen {
     private float menuScale=1f;
     private String spotifyHint="";
     private boolean playedOpenSound;
+    private final float[] navHover=new float[TABS.length];
+    private final Map<String,String> valuesCache=new HashMap<>();
+    private long valuesCacheAt;
     private int lastHoveredTab=-1;
     public LexyScreen(boolean editor){this(editor,0,null);}
     public LexyScreen(boolean editor,int tab){this(editor,tab,null);}
@@ -35,8 +40,8 @@ public final class LexyScreen extends Screen {
         float auto=Math.min(1.0f,Math.min((width-8f)/780f,(height-8f)/460f));
         menuScale=Math.max(.24f,auto*LexyClient.menuScalePercent/100f);
         int vw=Math.round(width/menuScale), vh=Math.round(height/menuScale);
-        panelW=Math.min(972,Math.max(410,vw-18));panelH=Math.min(590,Math.max(360,vh-18));
-        panelX=(vw-panelW)/2;panelY=(vh-panelH)/2;sidebarW=vw<760?145:170;
+        panelW=Math.min(1010,Math.max(410,vw-18));panelH=Math.min(620,Math.max(360,vh-18));
+        panelX=(vw-panelW)/2;panelY=(vh-panelH)/2;sidebarW=vw<760?141:177;
         int rx=rightX();int rw=rightW();
         search=new TextFieldWidget(textRenderer,rx+10,panelY+63,rw-20,21,Text.literal("Search modules"));
         search.setMaxLength(80);search.setPlaceholder(Text.literal("Search your modules..."));
@@ -58,7 +63,7 @@ public final class LexyScreen extends Screen {
     private int contentY(){return panelY+96;}
     private int contentH(){return Math.max(35,panelH-157);}
     private int columns(){return rightW()>480?2:1;}
-    private int navCapacity(){return Math.max(2,(panelH-164)/NAV_ROW);}
+    private int navCapacity(){return Math.max(2,(panelH-254)/NAV_ROW);}
     private int navLimit(){return Math.max(0,TABS.length-navCapacity());}
     private int rowsVisible(){return Math.max(1,contentH()/ROW_H);}
     private int capacity(){return columns()*rowsVisible();}
@@ -102,6 +107,31 @@ public final class LexyScreen extends Screen {
         if(textRenderer.getWidth(s)<=max)return s;while(s.length()>1&&textRenderer.getWidth(s+"...")>max)s=s.substring(0,s.length()-1);return s+"...";
     }
     private void label(DrawContext c,String s,int x,int y,int max,int color){text(c,ellipsis(s,max),x,y,color);}
+    private static int blend(int from,int to,float t){
+        t=Math.max(0f,Math.min(1f,t));
+        int r=(int)(((from>>16)&255)*(1-t)+((to>>16)&255)*t);
+        int g=(int)(((from>>8)&255)*(1-t)+((to>>8)&255)*t);
+        int b=(int)((from&255)*(1-t)+(to&255)*t);
+        return 0xFF000000|(r<<16)|(g<<8)|b;
+    }
+    private int navStart(){return panelY+100;}
+    private int navButtonsY(){return panelY+panelH-144;}
+    private int countActiveHud(){
+        int n=0;
+        for(var m:LexyClient.MODULES)
+            if(HudRenderer.isRelevant(m)&&LexyClient.enabled.getOrDefault(m.id(),false))n++;
+        return n;
+    }
+    private void actionButton(DrawContext c,String title,int x,int y,int w,int h,boolean hover,boolean active){
+        rounded(c,x,y,w,h,active?BG_ACTIVE:(hover?BG_HOVER:SURFACE));
+        frame(c,x,y,w,h,active?accent():OUTLINE);
+        label(c,title,x+9,y+(h-9)/2,w-18,WHITE);
+    }
+    private String sectionTitle(){
+        if(editor)return "HUD EDITOR";
+        return switch(tab){case 5,6->"PERFORMANCE";case 7,8->"AUDIO";case 9->"PERSONALIZATION";case 10->"COMBAT";case 11->"KEYBOARD";default->"DASHBOARD";};
+    }
+
     private List<LexyClient.Module> filtered(){
         String needle=query.trim().toLowerCase(Locale.ROOT);
         ArrayList<LexyClient.Module> list=new ArrayList<>();
@@ -117,52 +147,73 @@ public final class LexyScreen extends Screen {
     }
     private boolean modular(){return tab<=4;}
     @Override public void render(DrawContext c,int mx,int my,float dt){
-        renderBackground(c);c.fillGradient(0,0,width,height,0xF0040B17,0xEA101B30);
+        // A consistent two-pane layout. Every interactive hit target uses these same coordinates.
+        renderBackground(c);
+        c.fillGradient(0,0,width,height,0xEF030914,0xE9091626);
         int logicalMX=(int)logical(mx),logicalMY=(int)logical(my);
         c.getMatrices().push();c.getMatrices().scale(menuScale,menuScale,1);
-        rounded(c,panelX-7,panelY-6,panelW+14,panelH+13,0x69000000);
-        rounded(c,panelX-2,panelY-2,panelW+4,panelH+4,OUTLINE);
+        rounded(c,panelX-9,panelY-7,panelW+18,panelH+16,0x90000000);
+        rounded(c,panelX-3,panelY-3,panelW+6,panelH+6,OUTLINE);
         rounded(c,panelX,panelY,panelW,panelH,BG);
-        c.fillGradient(panelX+4,panelY+3,panelX+panelW-4,panelY+7,accent(),0xFF183656);
-        rect(c,panelX+4,panelY+4,sidebarW,panelH-8,PANEL);
+        c.fillGradient(panelX+2,panelY+2,panelX+panelW-2,panelY+panelH-2,0xFF101D2D,0xFF09111C);
+        rect(c,panelX+2,panelY+2,panelW-4,3,0xFF214361);
+        rect(c,panelX+2,panelY+2,Math.min(245,panelW/3),3,accent());
+
+        // Branding and navigation rail.
+        rect(c,panelX+3,panelY+5,sidebarW,panelH-8,0xFF111D2B);
         rect(c,panelX+sidebarW+4,panelY+12,1,panelH-24,OUTLINE);
-        rounded(c,panelX+16,panelY+13,39,39,0xFF0D1926);
-        c.drawTexture(LexyClient.LOGO,panelX+17,panelY+14,37,37,0,0,256,256,256,256);
-        label(c,"LexyClient",panelX+62,panelY+19,Math.max(35,sidebarW-66),WHITE);
-        label(c,"2.6  /  FABRIC",panelX+62,panelY+35,Math.max(36,sidebarW-68),MUTED);
-        rect(c,panelX+16,panelY+62,sidebarW-27,1,OUTLINE);
-        int count=navCapacity(); navScroll=Math.max(0,Math.min(navScroll,navLimit()));
-        for(int i=navScroll;i<Math.min(TABS.length,navScroll+count);i++){
-            int yy=panelY+68+(i-navScroll)*NAV_ROW;
+        rounded(c,panelX+13,panelY+14,43,43,0xFF1D344A);
+        frame(c,panelX+13,panelY+14,43,43,0xFF365A7A);
+        c.drawTexture(LexyClient.LOGO,panelX+16,panelY+17,37,37,0,0,256,256,256,256);
+        label(c,"LEXY",panelX+64,panelY+19,sidebarW-75,WHITE);
+        label(c,"CLIENT  /  2.8",panelX+64,panelY+35,sidebarW-75,0xFF7DB8F2);
+        rect(c,panelX+15,panelY+69,sidebarW-27,1,OUTLINE);
+        label(c,"NAVIGATION",panelX+18,panelY+81,sidebarW-32,0xFF718DA9);
+        navScroll=Math.max(0,Math.min(navScroll,navLimit()));
+        int visible=navCapacity();
+        for(int i=navScroll;i<Math.min(TABS.length,navScroll+visible);i++){
+            int yy=navStart()+(i-navScroll)*NAV_ROW;
             boolean active=i==tab&&!editor;
-            if(active){rounded(c,panelX+10,yy,sidebarW-16,28,0xFF2B3E52);rect(c,panelX+10,yy+7,3,14,accent());}
-            else if(inside(logicalMX,logicalMY,panelX+10,yy,sidebarW-16,28))
-                rounded(c,panelX+10,yy,sidebarW-16,28,0xFF1E2B39);
-            String navName = sidebarW<100?switch(i){case 0->"All";case 3->"Stats";case 5->"FPS HUD";case 6->"FPS Setup";case 8->"Music";case 9->"Themes";default->TABS[i];}:TABS[i];
-            label(c,navName,panelX+21,yy+9,sidebarW-30,active?WHITE:MUTED);
+            boolean hover=inside(logicalMX,logicalMY,panelX+10,yy,sidebarW-16,29);
+            navHover[i]+=( (hover?1f:0f)-navHover[i])*.27f;
+            if(active){
+                rounded(c,panelX+10,yy,sidebarW-17,29,BG_ACTIVE);
+                rect(c,panelX+10,yy+5,3,19,accent());
+            }else if(navHover[i]>.015f){
+                rounded(c,panelX+10,yy,sidebarW-17,29,blend(0xFF111D2B,BG_HOVER,navHover[i]));
+            }
+            rounded(c,panelX+17,yy+6,27,17,active?0xFF2D6799:0xFF203146);
+            label(c,NAV_SHORT[i],panelX+20,yy+11,21,active?WHITE:0xFF87A5C4);
+            String title=sidebarW<150?switch(i){case 0->"Modules";case 3->"Stats";case 5->"Video";case 6->"FPS Tuning";case 8->"Music";default->TABS[i];}:TABS[i];
+            label(c,title,panelX+50,yy+10,sidebarW-61,active?WHITE:MUTED);
         }
         if(navLimit()>0){
-            rounded(c,panelX+12,panelY+panelH-65,(sidebarW-28)/2,23,0xFF253A57);
-            rounded(c,panelX+16+(sidebarW-28)/2,panelY+panelH-65,(sidebarW-28)/2,23,0xFF253A57);
-            label(c,"UP",panelX+26,panelY+panelH-56,(sidebarW-28)/2-10,WHITE);
-            label(c,"DOWN",panelX+23+(sidebarW-28)/2,panelY+panelH-56,(sidebarW-28)/2-6,WHITE);
+            int by=navButtonsY(),bw=(sidebarW-31)/2;
+            actionButton(c,"< UP",panelX+13,by,bw,25,inside(logicalMX,logicalMY,panelX+13,by,bw,25),false);
+            actionButton(c,"DOWN >",panelX+19+bw,by,bw,25,inside(logicalMX,logicalMY,panelX+19+bw,by,bw,25),false);
         }
-        rect(c,panelX+14,panelY+panelH-56,sidebarW-21,1,OUTLINE);
-        label(c,editor?"HUD EDITOR":"HUD WIDGETS",panelX+18,panelY+panelH-43,sidebarW-25,accent());
-        rounded(c,panelX+13,panelY+panelH-93,sidebarW-22,24,0xFF254B71);
-        label(c,"MOVE HUD",panelX+24,panelY+panelH-85,sidebarW-39,WHITE);
-        label(c,"RSHIFT: open",panelX+18,panelY+panelH-31,sidebarW-24,MUTED);
-        label(c,"LSHIFT: close",panelX+18,panelY+panelH-19,sidebarW-24,MUTED);
+        int statusY=panelY+panelH-113;
+        rounded(c,panelX+13,statusY,sidebarW-22,21,0xFF192C40);
+        rect(c,panelX+20,statusY+8,5,5,0xFF75DFC0);
+        label(c,countActiveHud()+" HUD  /  "+TABS.length+" SECTIONS",panelX+31,statusY+6,sidebarW-42,0xFFB5CDE3);
+        actionButton(c,"MOVE HUD",panelX+13,panelY+panelH-85,sidebarW-22,28,
+                inside(logicalMX,logicalMY,panelX+13,panelY+panelH-85,sidebarW-22,28),false);
+        rect(c,panelX+14,panelY+panelH-47,sidebarW-24,1,OUTLINE);
+        label(c,"RSHIFT  TO TOGGLE",panelX+17,panelY+panelH-36,sidebarW-31,0xFF9BC9FC);
+        label(c,"ESC  TO CLOSE",panelX+17,panelY+panelH-22,sidebarW-31,0xFF7694B1);
+
+        // The title bar deliberately reserves the right-hand side for actions.
         int rx=rightX(),rw=rightW();
-        rounded(c,rx,panelY+12,rw,43,PANEL);
-        rect(c,rx,panelY+20,2,24,accent());
-        String title=editor?"HUD Layout":tab==5?"Video Settings":tab==6?"Performance":tab==7?"Spotify":tab==8?"Local Music":tab==9?"Appearance":tab==10?"Cheats":TABS[tab];
-        label(c,title,rx+12,panelY+20,rw-177,WHITE);
-        rounded(c,rx+rw-157,panelY+18,107,27,0xFF294968);
-        label(c,"EDIT HUD",rx+rw-138,panelY+27,80,WHITE);
-        rounded(c,rx+rw-44,panelY+18,35,27,0xFF313746);
-        label(c,"X",rx+rw-30,panelY+27,14,WHITE);
-        label(c,editor?"Drag readouts to position them":tab==6?"Real Minecraft graphics options":tab==7?"Connect your Spotify account securely":tab==8?"Audio runs inside Minecraft - no other app":tab==9?"Theme, overlay and density settings":tab==10?"Combat utilities and configuration":"Enable modules and readouts; switch categories below",rx+12,panelY+35,rw-20,MUTED);
+        rounded(c,rx,panelY+12,rw,44,PANEL);
+        rect(c,rx,panelY+14,3,39,accent());
+        label(c,sectionTitle()+"   /   "+(editor?"LAYOUT":String.format(Locale.ROOT,"%02d",tab+1)),rx+13,panelY+18,rw-180,0xFF7EABD4);
+        String heading=editor?"Position widgets":tab==5?"Video options":tab==6?"Performance tuning":tab==7?"Spotify & Connect":tab==8?"Local audio":tab==9?"Appearance":tab==10?"Combat modules":TABS[tab];
+        label(c,heading,rx+13,panelY+35,rw-179,WHITE);
+        actionButton(c,"EDIT HUD",rx+rw-157,panelY+18,106,28,
+                inside(logicalMX,logicalMY,rx+rw-157,panelY+18,106,28),false);
+        actionButton(c,"X",rx+rw-43,panelY+18,34,28,
+                inside(logicalMX,logicalMY,rx+rw-43,panelY+18,34,28),false);
+
         if(editor)renderEditor(c,logicalMX,logicalMY);
         else if(modular())renderModules(c,logicalMX,logicalMY);
         else if(tab==5||tab==6)renderOptimization(c,logicalMX,logicalMY);
@@ -172,8 +223,10 @@ public final class LexyScreen extends Screen {
         else renderStyle(c,logicalMX,logicalMY);
         updateTextFields();
         super.render(c,logicalMX,logicalMY,dt);
-        String footer=editor?"Drag preview chips  |  Reset restores positions":tab==7?"Pojav: paste the callback URL if redirect fails":tab==8?"WAV / AIFF  |  Playback inside Minecraft":"RSHIFT: menu  ·  RCTRL: HUD  ·  C: zoom  ·  X: close";
-        label(c,footer,rx+7,panelY+panelH-17,rw-14,MUTED);
+        int footY=panelY+panelH-25;
+        rect(c,rx,footY-7,rw,1,OUTLINE);
+        String footer=editor?"EDIT MODE   ·   Drag elements to reposition":tab==7?"SPOTIFY   ·   Official Connect or local files":tab==8?"LOCAL PLAYER   ·   MP3 / WAV / AIFF":"RSHIFT  Toggle menu     ·     RCTRL  HUD     ·     C  Zoom";
+        label(c,footer,rx+8,footY,rw-16,0xFF819DB8);
         c.getMatrices().pop();
     }
     private void renderModules(DrawContext c,int mx,int my){
@@ -186,23 +239,38 @@ public final class LexyScreen extends Screen {
             boolean editable=HudRenderer.isRelevant(mod);
             boolean on=editable&&LexyClient.enabled.getOrDefault(mod.id(),false);
             boolean hover=inside(mx,my,x,cy,cw,ROW_H-4);
-            rounded(c,x,cy,cw,ROW_H-4,hover?0xFF25384B:PANEL);
-            rect(c,x+1,cy+1,2,ROW_H-6,on?accent():0xFF34465C);
-            label(c,mod.id(),x+12,cy+10,cw-81,WHITE);
-            String value;try{value=mod.value().get();}catch(Exception ex){value="Unavailable";}
-            label(c,value,x+12,cy+30,cw-28,MUTED);
+            rounded(c,x,cy,cw,ROW_H-4,hover?BG_HOVER:PANEL);
+            frame(c,x,cy,cw,ROW_H-4,hover?0xFF456583:OUTLINE);
+            rect(c,x,cy+8,3,ROW_H-20,on?accent():0xFF364E67);
+            label(c,mod.id(),x+12,cy+10,cw-87,WHITE);
+            long currentTime=System.nanoTime();
+            if(currentTime-valuesCacheAt>220_000_000L){valuesCache.clear();valuesCacheAt=currentTime;}
+            String value=valuesCache.get(mod.id());
+            if(value==null){
+                try{value=mod.value().get();}catch(Exception ex){value="Unavailable";}
+                if(value==null)value="–";
+                valuesCache.put(mod.id(),value);
+            }
+            label(c,value,x+12,cy+31,cw-28,MUTED);
             if(editable){
-                rounded(c,x+cw-50,cy+13,38,21,on?0xFF316CA4:0xFF384659);
-                rounded(c,x+cw-(on?29:46),cy+16,15,15,WHITE);
-            }else label(c,"LIVE",x+cw-41,cy+19,35,0xFF6DCEB0);
+                rounded(c,x+cw-59,cy+13,47,23,on?0xFF276A9E:0xFF304359);
+                rounded(c,x+cw-(on?32:55),cy+16,17,17,on?WHITE:0xFFB2C0D0);
+            }else{
+                rounded(c,x+cw-47,cy+15,37,20,0xFF20483F);
+                label(c,"LIVE",x+cw-40,cy+21,30,0xFF92E6C9);
+            }
         }
         c.disableScissor();
-        if(list.isEmpty())text(c,"No matching modules",rx+16,y+20,MUTED);
+        if(list.isEmpty()){
+            rounded(c,rx+10,y+10,rw-20,75,PANEL);
+            label(c,"NO MATCHES",rx+24,y+30,rw-45,WHITE);
+            label(c,"Try another term or category.",rx+24,y+49,rw-45,MUTED);
+        }
         drawScrollbar(c,list.size(),y,contentH());
-        int pagerY=panelY+panelH-42;
-        rounded(c,rx,pagerY,62,20,scroll>0?SURFACE:OUTLINE);label(c,"< PREV",rx+8,pagerY+7,52,WHITE);
-        rounded(c,rx+rw-62,pagerY,62,20,scroll<maxScroll(list.size())?SURFACE:OUTLINE);label(c,"NEXT >",rx+rw-54,pagerY+7,52,WHITE);
-        label(c,"Page "+page()+" / "+pages(list.size())+"  ·  "+list.size()+" items",rx+68,pagerY+7,rw-142,WHITE);
+        int pagerY=panelY+panelH-53;
+        actionButton(c,"< PREV",rx,pagerY,73,23,inside(mx,my,rx,pagerY,73,23),scroll>0);
+        actionButton(c,"NEXT >",rx+rw-73,pagerY,73,23,inside(mx,my,rx+rw-73,pagerY,73,23),scroll<maxScroll(list.size()));
+        label(c,"PAGE "+page()+" / "+pages(list.size())+"   ·   "+list.size()+" WIDGETS",rx+83,pagerY+7,rw-172,MUTED);
     }
     private void drawScrollbar(DrawContext c,int count,int y,int h){
         int mx=maxScroll(count);if(mx<1)return;int xx=rightX()+rightW()-4;
@@ -214,7 +282,9 @@ public final class LexyScreen extends Screen {
         int buttonWidth=(rw-10)/5;
         for(int i=0;i<5;i++){
             String name=new String[]{"MAX FPS","BALANCED","QUALITY","POJAV",OptimizationManager.adaptiveEnabled?"AUTO ON":"AUTO OFF"}[i];int x=rx+i*buttonWidth;
-            rect(c,x,yy,buttonWidth-5,29,inside(mx,my,x,yy,buttonWidth-5,29)?accent():SURFACE);
+            boolean hover=inside(mx,my,x,yy,buttonWidth-5,29);
+            rounded(c,x,yy,buttonWidth-5,29,hover?BG_ACTIVE:SURFACE);
+            frame(c,x,yy,buttonWidth-5,29,hover?accent():OUTLINE);
             label(c,name,x+8,yy+10,buttonWidth-17,WHITE);
         }
         text(c,"Video settings  -  changes are saved to options.txt",rx+4,yy+37,MUTED);
@@ -223,12 +293,15 @@ public final class LexyScreen extends Screen {
         clip(c,rx,listY,rx+rw,listY+avail);
         for(int j=0;j<=avail/rowH&&j+scroll<OptimizationManager.OPTIONS.size();j++){
             var item=OptimizationManager.OPTIONS.get(j+scroll);int y=listY+j*rowH;
-            rect(c,rx,y,rw-6,rowH-4,PANEL);rect(c,rx,y,3,rowH-4,accent());
+            rounded(c,rx,y,rw-6,rowH-4,PANEL);
+            frame(c,rx,y,rw-6,rowH-4,OUTLINE);
+            rect(c,rx,y+8,3,rowH-20,accent());
             label(c,item.name(),rx+12,y+6,rw-152,WHITE);
             label(c,item.help(),rx+12,y+23,rw-151,MUTED);
-            rect(c,rx+rw-143,y+9,24,26,SURFACE);text(c,"-",rx+rw-134,y+18,WHITE);
-            rect(c,rx+rw-110,y+9,75,26,SURFACE);label(c,item.value().get(),rx+rw-105,y+18,65,WHITE);
-            rect(c,rx+rw-31,y+9,24,26,SURFACE);text(c,"+",rx+rw-23,y+18,WHITE);
+            actionButton(c,"-",rx+rw-143,y+9,24,26,inside(mx,my,rx+rw-143,y+9,24,26),false);
+            rounded(c,rx+rw-110,y+9,75,26,SURFACE);
+            label(c,item.value().get(),rx+rw-105,y+18,65,WHITE);
+            actionButton(c,"+",rx+rw-31,y+9,24,26,inside(mx,my,rx+rw-31,y+9,24,26),false);
         }
         c.disableScissor();
     }
@@ -403,11 +476,17 @@ public final class LexyScreen extends Screen {
     private void renderCheats(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+66;
         String[] items={"TOTEM","TRIGGER","AIM","CLICKER"};
+        String[] ids={"AutoTotem","TriggerBot","AimAssist","AutoClicker"};
         for(int i=0;i<4;i++){
             int xx=cheatTabX(i),ww=cheatTabW(i);
-            rounded(c,xx,top,ww,27,i==cheatSection?0xFF264F80:SURFACE);
-            if(i==cheatSection)rect(c,xx+5,top+24,ww-10,2,accent());
-            label(c,items[i],xx+10,top+9,ww-16,i==cheatSection?WHITE:MUTED);
+            boolean selectedTab=i==cheatSection;
+            boolean hover=inside(mx,my,xx,top,ww,27);
+            rounded(c,xx,top,ww,27,selectedTab?BG_ACTIVE:hover?BG_HOVER:PANEL);
+            frame(c,xx,top,ww,27,selectedTab?accent():OUTLINE);
+            if(selectedTab)rect(c,xx+7,top+24,ww-14,2,accent());
+            boolean enabled=LexyClient.enabled.getOrDefault(ids[i],false);
+            rect(c,xx+ww-15,top+11,6,6,enabled?0xFF70E6C7:0xFF536B83);
+            label(c,items[i],xx+10,top+9,ww-29,selectedTab?WHITE:MUTED);
         }
         if(cheatSection==0)renderAutoTotem(c,mx,my);
         else if(cheatSection==1)renderTriggerBot(c,mx,my);
@@ -416,7 +495,8 @@ public final class LexyScreen extends Screen {
     }
     private void renderAutoClicker(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
-        rounded(c,x,top,w,71,0xFF162A43);rect(c,x,top,4,71,accent());
+        rounded(c,x,top,w,71,PANEL);
+        frame(c,x,top,w,71,OUTLINE);rect(c,x,top+9,3,53,accent());
         label(c,"AutoClicker | "+AutoClicker.status(),x+13,top+10,w-25,WHITE);
         label(c,"Vanilla interactions · no GUI clicks · up to 18 tick/s",x+13,top+26,w-25,MUTED);
         int bw=Math.max(60,(w-26)/2),by=top+42;
@@ -444,7 +524,8 @@ public final class LexyScreen extends Screen {
         clip(c,x,start,x+w,end);
         for(int i=scroll;i<Math.min(CLICKER_ROWS,scroll+visible);i++){
             int y=start+(i-scroll)*48;
-            rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            rounded(c,x+7,y,w-15,41,PANEL);
+            frame(c,x+7,y,w-15,41,OUTLINE);rect(c,x+7,y+8,3,25,accent());
             label(c,names[i],x+19,y+16,w-145,WHITE);
             rounded(c,x+w-113,y+8,98,25,SURFACE);label(c,values[i],x+w-104,y+16,86,WHITE);
         }
@@ -478,7 +559,8 @@ public final class LexyScreen extends Screen {
     }
     private void renderAimAssist(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
-        rounded(c,x,top,w,71,0xFF172A43);rect(c,x,top,4,71,accent());
+        rounded(c,x,top,w,71,PANEL);
+        frame(c,x,top,w,71,OUTLINE);rect(c,x,top+9,3,53,accent());
         label(c,"Aim Assist | "+AimAssist.status(),x+13,top+10,w-25,WHITE);
         label(c,"Smooth aim · visible targets · no packet/reach changes",x+13,top+26,w-24,MUTED);
         int buttonY=top+42,bw=Math.max(60,(w-26)/2);
@@ -503,7 +585,8 @@ public final class LexyScreen extends Screen {
         clip(c,x,start,x+w,end);
         for(int i=scroll;i<Math.min(AIM_ROWS,scroll+visible);i++){
             int y=start+(i-scroll)*48;
-            rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            rounded(c,x+7,y,w-15,41,PANEL);
+            frame(c,x+7,y,w-15,41,OUTLINE);rect(c,x+7,y+8,3,25,accent());
             label(c,names[i],x+19,y+16,w-145,WHITE);
             rounded(c,x+w-113,y+8,98,25,SURFACE);label(c,values[i],x+w-104,y+16,86,WHITE);
         }
@@ -516,7 +599,8 @@ public final class LexyScreen extends Screen {
     }
     private void renderTriggerBot(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
-        rounded(c,x,top,w,71,0xFF1B2837);rect(c,x,top,4,71,accent());
+        rounded(c,x,top,w,71,PANEL);
+        frame(c,x,top,w,71,OUTLINE);rect(c,x,top+9,3,53,accent());
         label(c,"TriggerBot | "+TriggerBot.status(),x+13,top+10,w-25,WHITE);
         label(c,"Only crosshair targets / vanilla combat range",x+13,top+26,w-24,MUTED);
         int toggleX=x+9,buttonY=top+42,bw=Math.max(60,(w-26)/2);
@@ -537,7 +621,8 @@ public final class LexyScreen extends Screen {
         clip(c,x,start,x+w,end);
         for(int i=scroll;i<Math.min(TRIGGER_ROWS,scroll+visible);i++){
             int y=start+(i-scroll)*48;
-            rounded(c,x+7,y,w-15,41,PANEL);rect(c,x+7,y+8,3,25,accent());
+            rounded(c,x+7,y,w-15,41,PANEL);
+            frame(c,x+7,y,w-15,41,OUTLINE);rect(c,x+7,y+8,3,25,accent());
             label(c,names[i],x+19,y+16,w-145,WHITE);
             rounded(c,x+w-113,y+8,98,25,SURFACE);
             label(c,values[i],x+w-104,y+16,86,WHITE);
@@ -551,7 +636,8 @@ public final class LexyScreen extends Screen {
     }
     private void renderAutoTotem(DrawContext c,int mx,int my){
         int x=rightX(),w=rightW(),top=panelY+102;
-        rounded(c,x,top,w,71,0xFF112F52);rect(c,x,top,4,71,accent());
+        rounded(c,x,top,w,71,PANEL);
+        frame(c,x,top,w,71,OUTLINE);rect(c,x,top+9,3,53,accent());
         label(c,"AutoTotem | "+AutoTotem.status(),x+13,top+10,w-25,WHITE);
         label(c,"Mouse-safe inventory or instant direct swap",x+13,top+26,w-24,MUTED);
         int toggleX=x+9,buttonY=top+42,bw=Math.max(60,(w-26)/2);
@@ -585,8 +671,14 @@ public final class LexyScreen extends Screen {
         label(c,"Direct fallback protects your mouse while fighting.",x+9,panelY+panelH-25,w-20,MUTED);
     }
     @Override public boolean keyPressed(int keyCode,int scanCode,int modifiers){
-        if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT){
-            close();return true;
+        if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT){
+            if(LexyClient.allowMenuToggle())close();
+            return true;
+        }
+        if(keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE){close();return true;}
+        if((modifiers&org.lwjgl.glfw.GLFW.GLFW_MOD_CONTROL)!=0
+                && keyCode==org.lwjgl.glfw.GLFW.GLFW_KEY_F&&modular()&&search!=null){
+            setFocused(search);search.setFocused(true);return true;
         }
         return super.keyPressed(keyCode,scanCode,modifiers);
     }
@@ -641,18 +733,18 @@ public final class LexyScreen extends Screen {
         }
         if(button!=0)return super.mouseClicked(mx,my,button);
         if(inside(mx,my,panelX,panelY,panelW,panelH))LexySounds.tap();
-        if(inside(mx,my,rightX()+rightW()-44,panelY+18,35,27)){close();return true;}
-        if(inside(mx,my,rightX()+rightW()-157,panelY+18,107,27)||inside(mx,my,panelX+13,panelY+panelH-93,sidebarW-22,24)){
+        if(inside(mx,my,rightX()+rightW()-43,panelY+18,34,28)){close();return true;}
+        if(inside(mx,my,rightX()+rightW()-157,panelY+18,106,28)||inside(mx,my,panelX+13,panelY+panelH-85,sidebarW-22,28)){
             LexySounds.navigate();moveHud();return true;
         }
-        if(navLimit()>0 && inside(mx,my,panelX+12,panelY+panelH-65,sidebarW-24,23)){
-            if(mx<panelX+15+(sidebarW-28)/2)navScroll=Math.max(0,navScroll-2);
+        if(navLimit()>0 && inside(mx,my,panelX+13,panelY+panelH-144,sidebarW-23,25)){
+            if(mx<panelX+17+(sidebarW-31)/2)navScroll=Math.max(0,navScroll-2);
             else navScroll=Math.min(navLimit(),navScroll+2);
             LexySounds.navigate();return true;
         }
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+navCapacity());i++){
-            int yy=panelY+68+(i-navScroll)*NAV_ROW;
-            if(inside(mx,my,panelX+10,yy,sidebarW-16,28)){
+            int yy=navStart()+(i-navScroll)*NAV_ROW;
+            if(inside(mx,my,panelX+10,yy,sidebarW-16,29)){
                 if(!editor){if(i==11){LexySounds.confirm();client.setScreen(new KeybindSettingsScreen(this));return true;}tab=i;scroll=0;selected=-1;updateTextFields();LexySounds.navigate();}
                 return true;
             }
@@ -673,9 +765,9 @@ public final class LexyScreen extends Screen {
         int rx=rightX(),rw=rightW();
         if(modular()){
             int yy=contentY();int cols=columns();
-            if(inside(mx,my,rx,panelY+panelH-42,rw,22)){
-                if(mx<rx+65)scroll=Math.max(0,scroll-rowsVisible());
-                else if(mx>rx+rw-65)scroll=Math.min(maxScroll(filtered().size()),scroll+rowsVisible());
+            if(inside(mx,my,rx,panelY+panelH-53,rw,23)){
+                if(mx<rx+77)scroll=Math.max(0,scroll-rowsVisible());
+                else if(mx>rx+rw-77)scroll=Math.min(maxScroll(filtered().size()),scroll+rowsVisible());
                 return true;
             }
             if(inside(mx,my,rx,yy,rw,contentH())){
@@ -985,8 +1077,8 @@ public final class LexyScreen extends Screen {
         double px=logical(mx),py=logical(my);
         int found=-1;
         for(int i=navScroll;i<Math.min(TABS.length,navScroll+navCapacity());i++){
-            int yy=panelY+68+(i-navScroll)*NAV_ROW;
-            if(inside(px,py,panelX+10,yy,sidebarW-16,28)){found=i;break;}
+            int yy=navStart()+(i-navScroll)*NAV_ROW;
+            if(inside(px,py,panelX+10,yy,sidebarW-16,29)){found=i;break;}
         }
         if(found>=0 && found!=lastHoveredTab && LexyClient.uiHoverSounds)LexySounds.hover();
         lastHoveredTab=found;
@@ -1007,7 +1099,7 @@ public final class LexyScreen extends Screen {
     }
     @Override public boolean mouseScrolled(double mx,double my,double amount){
         mx=logical(mx);my=logical(my);
-        if(inside(mx,my,panelX+7,panelY+65,sidebarW-8,panelH-117)){
+        if(inside(mx,my,panelX+7,panelY+98,sidebarW-8,panelH-256)){
             navScroll=Math.max(0,Math.min(navLimit(),navScroll-(int)Math.signum(amount)*2));return true;
         }
         if(inside(mx,my,rightX(),contentY(),rightW(),contentH())||tab==6||tab==7||tab==8||tab==9||tab==10){

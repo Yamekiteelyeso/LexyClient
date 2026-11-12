@@ -26,13 +26,13 @@ public final class TitleBranding {
     }
     private static void draw(DrawContext ctx,int w,int h) {
         int panelWidth=Math.min(252,Math.max(90,w-16));
-        ctx.fill(8,7,8+panelWidth,68,0xD90D1727);
+        ctx.fill(8,7,8+panelWidth,68,0xEA0D1728);
         ctx.fill(8,7,11,68,LexyClient.accent());
         ctx.fill(12,69,8+panelWidth,70,0xFF3B82F6);
         ctx.drawTexture(LexyClient.LOGO,17,13,50,50,0,0,256,256,256,256);
         var font=LexyClient.mc.textRenderer;
         ctx.drawTextWithShadow(font,Text.literal("LexyClient"),74,22,0xFF80C6FF);
-        if(panelWidth>200)ctx.drawTextWithShadow(font,Text.literal("FABRIC 1.20.1  |  CLIENT 2.3"),74,36,0xFFC9D6E7);
-        if(panelWidth>200)ctx.drawTextWithShadow(font,Text.literal("RSHIFT: menu  |  MENU: touch"),74,50,0xFF90A7C3);
+        if(panelWidth>200)ctx.drawTextWithShadow(font,Text.literal("FABRIC 1.20.1  |  CLIENT 2.8"),74,36,0xFFC9D6E7);
+        if(panelWidth>200)ctx.drawTextWithShadow(font,Text.literal("RSHIFT: toggle  |  MENU: touch"),74,50,0xFF90A7C3);
     }
 }

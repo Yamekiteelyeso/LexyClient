@@ -35,23 +35,23 @@ public final class HudEditorScreen extends Screen {
         }
         HudRenderer.render(ctx,true,selected);
         int x=barLeft(),y=barTop(),w=barWidth();
-        ctx.fill(x,y,x+w,y+92,0xF1131A29);
+        ctx.fill(x,y,x+w,y+92,0xF1101B2B);
         ctx.fill(x,y,x+w,y+3,LexyClient.accent());
-        ctx.drawTextWithShadow(textRenderer,"LEXY  |  HUD EDITOR",x+8,y+8,0xFFEAF3FF);
-        ctx.fill(x+w-59,y+5,x+w-7,y+25,0xFF315D87);
+        ctx.drawTextWithShadow(textRenderer,"LEXY  /  HUD STUDIO",x+8,y+8,0xFFEAF3FF);
+        ctx.fill(x+w-59,y+5,x+w-7,y+25,0xFF225B89);
         ctx.drawCenteredTextWithShadow(textRenderer,"DONE",x+w-33,y+11,0xFFF6FAFF);
         ctx.drawTextWithShadow(textRenderer,"Drag widgets  |  Zoom "+LexyClient.hudScalePercent+"%",x+8,y+23,0xFFB5C6D9);
         String[] controls={"- SIZE","+ SIZE","FPS","PING","RESET"};
         for(int i=0;i<controls.length;i++){
             int cx=x+8+i*cellWidth(),cw=cellWidth()-3;
             boolean on=(i==2&&LexyClient.enabled.getOrDefault("FPS",false))||(i==3&&LexyClient.enabled.getOrDefault("Ping",false));
-            ctx.fill(cx,y+37,cx+cw,y+57,on?0xFF285D86:0xFF293C54);
+            ctx.fill(cx,y+37,cx+cw,y+57,on?0xFF285D86:0xFF22354D);
             ctx.drawCenteredTextWithShadow(textRenderer,controls[i],cx+cw/2,y+43,0xFFF3F7FF);
         }
         String[] presets={"MINIMAL","NORMAL","EXTENDED"};
         for(int i=0;i<presets.length;i++){
             int cx=x+8+i*presetWidth(),cw=presetWidth()-3;
-            ctx.fill(cx,y+65,cx+cw,y+85,LexyClient.hudPreset==i?0xFF2D71AA:0xFF28394F);
+            ctx.fill(cx,y+65,cx+cw,y+85,LexyClient.hudPreset==i?0xFF2D71AA:0xFF21374F);
             ctx.drawCenteredTextWithShadow(textRenderer,presets[i],cx+cw/2,y+71,0xFFF3F7FF);
         }
         super.render(ctx,mx,my,delta);
@@ -109,7 +109,15 @@ public final class HudEditorScreen extends Screen {
     }
 
     @Override public boolean keyPressed(int keyCode,int scanCode,int modifiers){
-        if(keyCode==GLFW.GLFW_KEY_LEFT_SHIFT||keyCode==GLFW.GLFW_KEY_ESCAPE){close();return true;}
+        if(keyCode==GLFW.GLFW_KEY_RIGHT_SHIFT){
+            if(LexyClient.allowMenuToggle()){
+                LexyClient.save();
+                if(parent instanceof LexyScreen menu)menu.close();
+                else close();
+            }
+            return true;
+        }
+        if(keyCode==GLFW.GLFW_KEY_ESCAPE){close();return true;}
         return super.keyPressed(keyCode,scanCode,modifiers);
     }
 
