@@ -1,16 +1,29 @@
-# LexyClient 2.1.0 — Fabric 1.20.1
+# LexyClient 2.2 — Slate Edition
 
-Requiere **Minecraft 1.20.1**, **Fabric Loader**, **Fabric API** y **Java 17** (en PojavLauncher usa el entorno Java compatible con 1.20.1).
+## Instalación
+1. Utiliza Minecraft Java 1.20.1, Fabric Loader y Fabric API, con Java 17.
+2. Retira cualquier versión anterior de `lexy-client` de la carpeta `mods`.
+3. Coloca el archivo `LexyClient-2.2.0.jar` en `mods` y abre el juego.
+4. En PojavLauncher puedes entrar a LexyClient desde el menú de pausa; en PC funciona también Shift derecho.
 
-1. Elimina las versiones anteriores de LexyClient de `mods`.
-2. Copia `LexyClient-2.1.0.jar` a la carpeta `mods` de la instancia.
-3. Abre el juego y entra a **Cheats > AutoTotem > CONFIGURE**.
-4. Selecciona `MODE`: DIRECT o INVENTORY. `RANDOM TOTEM SLOT` cambia qué ranura se usa cuando hay más de un tótem disponible.
-5. Ajusta `MIN DELAY`, `MAX DELAY`, `INVENTORY STEP` y `AFTER-SWAP COOLDOWN` en milisegundos. Usa flechas UP/DOWN para recorrer las opciones en Pojav.
-6. Activa AutoTotem explícitamente; queda apagado por defecto.
+## Interfaz
+La interfaz usa tonos pizarra y un diseño menos recargado. La pestaña **All Modules** agrupa indicadores que realmente pueden mostrarse en el HUD; los apartados Combat/Statistics muestran datos de lectura sin simular interruptores. `Performance` y `Optimization` están reservados para ajustes del menú, no para elementos flotantes durante la partida.
 
-**DIRECT** realiza el intercambio usando el control normal de offhand. **INVENTORY** abre el inventario, muestra un puntero virtual y utiliza la secuencia coger/poner/devolver. Si el intercambio no es aceptado por el servidor no se garantiza que termine correctamente; el programa evitará operar durante un cooldown.
+## AutoTotem
+Abre `Cheats > CONFIGURE`. `DIRECT` usa el intercambio normal de inventario, `INVENTORY` abre la mochila del jugador y realiza los clics con pausas y verificación del cursor. Puedes cambiar los milisegundos de espera, el cooldown y la selección aleatoria de tótem. La función viene desactivada por defecto y algunos servidores pueden rechazar estos movimientos. Si ves `Server did not confirm swap`, revisa el tipo de servidor y los retrasos: no fuerces intervalos extremadamente rápidos.
 
-Los intervalos en milisegundos se redondean efectivamente al siguiente tick del cliente (normalmente 50 ms). El cursor de pantalla dibujado no es un cursor físico de Android. Al cancelar en medio de una transferencia, si queda un objeto en el cursor, vuelve a colocarlo manualmente en una ranura vacía.
+## Spotify y PojavLauncher
+1. Registra una aplicación propia en https://developer.spotify.com/dashboard y copia el **Client ID público**, nunca el secreto.
+2. Añade exactamente `http://127.0.0.1:43871/callback` a las redirect URIs.
+3. Para aplicaciones en modo desarrollo, Spotify exige Premium al propietario y que los usuarios autorizados estén en la allowlist correspondiente. Sus restricciones son externas al mod.
+4. Ve a `Spotify` en LexyClient, pega el Client ID y pulsa `CONNECT ACCOUNT`.
+5. Si el móvil no retorna a Minecraft, utiliza `COPY LOGIN LINK` y termina el login en el navegador. Copia la URL final que comience por `http://127.0.0.1:43871/callback?` (no tu contraseña) y utiliza `PASTE FROM CLIPBOARD` y luego `FINISH LOGIN FROM CALLBACK`.
+6. Una vez conectado, abre Spotify en el móvil, reproduce una canción y pulsa `REFRESH DEVICES`/`USE PHONE`. La música suena en Spotify, no en Minecraft.
 
-**Compatibilidad:** la compilación en GitHub Actions comprueba Java/Fabric, pero no sustituye una prueba dentro de Minecraft o PojavLauncher.
+**Importante:** el Client ID se recuerda, pero las credenciales de acceso no se guardan en texto plano; se requiere autorización nueva al reiniciar. Android puede suspender Pojav al abrir el navegador y los resultados dependen de la versión del launcher, de Spotify y del servidor.
+
+## Sonidos
+El cliente incorpora 11 efectos originales discretos. Puedes activar/desactivar todos los sonidos, los sonidos al pasar el cursor y el volumen desde `Appearance`.
+
+## Seguridad y límites
+No hay garantías de que un servidor acepte operaciones de inventario automatizadas. Las funciones deben usarse respetando las reglas del servidor. La integración Spotify usa la API oficial con PKCE y nunca requiere pegar la contraseña en LexyClient.

@@ -72,11 +72,11 @@ public final class HudEditorScreen extends Screen {
                     case 3 -> LexyClient.enabled.put("Ping",!LexyClient.enabled.getOrDefault("Ping",false));
                     case 4 -> HudRenderer.reset();
                 }
-                LexyClient.save();return true;
+                HudRenderer.invalidate();LexyClient.save();LexySounds.toggle();return true;
             }
             if(hit(mx,my,x+8,y+65,presetWidth()*3,20)){
                 int i=Math.min(2,(int)(mx-x-8)/Math.max(1,presetWidth()));
-                LexyClient.applyHudPreset(i);selected=null;return true;
+                LexyClient.applyHudPreset(i);LexySounds.navigate();selected=null;return true;
             }
             return true;
         }

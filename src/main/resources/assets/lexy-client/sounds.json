@@ -34,5 +34,68 @@
         "volume": 0.65
       }
     ]
+  },
+  "hover": {
+    "sounds": [
+      {
+        "name": "lexy-client:hover",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "navigate": {
+    "sounds": [
+      {
+        "name": "lexy-client:navigate",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "confirm": {
+    "sounds": [
+      {
+        "name": "lexy-client:confirm",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "deny": {
+    "sounds": [
+      {
+        "name": "lexy-client:deny",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "success": {
+    "sounds": [
+      {
+        "name": "lexy-client:success",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "notify": {
+    "sounds": [
+      {
+        "name": "lexy-client:notify",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
+  },
+  "save": {
+    "sounds": [
+      {
+        "name": "lexy-client:save",
+        "stream": false,
+        "volume": 0.65
+      }
+    ]
   }
 }

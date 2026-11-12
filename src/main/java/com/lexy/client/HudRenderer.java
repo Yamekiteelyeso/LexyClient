@@ -9,6 +9,11 @@ import java.util.*;
 public final class HudRenderer {
     private HudRenderer() {}
     private static final Map<String,Long> lastSamples = new HashMap<>();
+    private static final Set<String> MINIMAL = Set.of("FPS","Ping","Health","Totems","Low Health Alert");
+    private static List<Widget> cachedWidgets = List.of();
+    private static long cacheAt;
+    private static int cachedW, cachedH, cachedState;
+    public static void invalidate(){cacheAt=0;cachedWidgets=List.of();}
     private static final Map<String,String> rateLimited = new HashMap<>();
     public record Widget(String id, String label, String value, int x, int y, int width, int height) {
         public boolean contains(double mx, double my) { return mx>=x && my>=y && mx<x+width && my<y+height; }
@@ -40,6 +45,10 @@ public final class HudRenderer {
     public static List<Widget> layout() {
         MinecraftClient mc=MinecraftClient.getInstance();
         int sw=mc.getWindow().getScaledWidth(), sh=mc.getWindow().getScaledHeight();
+        long sampleAt=System.nanoTime()/1_000_000L;
+        int layoutState=Objects.hash(LexyClient.hudScalePercent,LexyClient.compactHud,
+                LexyClient.hudSpacing,LexyClient.maxHudWidgets,LexyClient.hudMinimal);
+        if(sampleAt-cacheAt<125 && cachedW==sw && cachedH==sh && cachedState==layoutState) return cachedWidgets;
         float scale=scale(sw,sh);
         int entryH=Math.max(8,Math.round((LexyClient.compactHud?15:18)*scale));
         List<Widget> widgets=new ArrayList<>();
@@ -56,7 +65,7 @@ public final class HudRenderer {
             } catch(RuntimeException ex) {value="Unavailable";}
             String label=module.id();
             if (noisy(label, value)) continue;
-            if(LexyClient.hudMinimal && !LexyClient.positions.containsKey(label+".xp") && !Set.of("FPS", "Ping", "Health", "Totems", "Low Health Alert").contains(label)) continue;
+            if(LexyClient.hudMinimal && !LexyClient.positions.containsKey(label+".xp") && !MINIMAL.contains(label)) continue;
             String line = label.equals("FPS") || label.equals("Ping") ? label+": "+value : label+"  "+value;
             int w=Math.max(Math.round(60*scale),Math.round((mc.textRenderer.getWidth(line)+21)*scale));
             w=Math.min(sw,w);
@@ -80,7 +89,9 @@ public final class HudRenderer {
             fallbackY+=Math.max(entryH+1,Math.round(LexyClient.hudSpacing*scale));
             columnW=Math.max(columnW,w);
         }
-        return widgets;
+        cachedWidgets=List.copyOf(widgets);
+        cacheAt=sampleAt;cachedW=sw;cachedH=sh;cachedState=layoutState;
+        return cachedWidgets;
     }
     public static void place(Widget widget,int x,int y){
         MinecraftClient mc=MinecraftClient.getInstance();
@@ -94,8 +105,9 @@ public final class HudRenderer {
         LexyClient.positions.remove(widget.id());LexyClient.positions.remove(widget.id()+".y");
         LexyClient.positions.put(widget.id()+".xp",safeX==0?0:Math.round(x*10000f/safeX));
         LexyClient.positions.put(widget.id()+".yp",safeY==0?0:Math.round(y*10000f/safeY));
+        invalidate();
     }
-    public static void reset(){LexyClient.positions.clear();LexyClient.save();}
+    public static void reset(){LexyClient.positions.clear();invalidate();LexyClient.save();}
     public static void render(DrawContext c,boolean editor,String selected) {
         MinecraftClient mc=MinecraftClient.getInstance();
         float scale=scale(mc.getWindow().getScaledWidth(),mc.getWindow().getScaledHeight());

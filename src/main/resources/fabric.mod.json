@@ -3,7 +3,7 @@
   "id": "lexy-client",
   "version": "${version}",
   "name": "LexyClient",
-  "description": "LexyClient Blue Edition for PojavLauncher + PC responsive HUD and GUI, Spotify PKCE login, AutoTotem settings, performance presets and local audio.",
+  "description": "LexyClient Slate Edition for PojavLauncher + PC: responsive modern GUI, checked AutoTotem inventory transfers, Spotify PKCE, useful HUD metrics and original UI sounds.",
   "environment": "client",
   "entrypoints": {
     "client": [

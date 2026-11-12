@@ -8,7 +8,8 @@ public final class AndroidBrowser {
     private AndroidBrowser(){}
     public static boolean open(String url) {
         if(url==null || !url.startsWith("https://accounts.spotify.com/")
-                && !url.startsWith("https://developer.spotify.com/")) return false;
+                && !url.startsWith("https://developer.spotify.com/")
+                && !url.startsWith("https://open.spotify.com/")) return false;
         try {
             Class<?> thread = Class.forName("android.app.ActivityThread");
             Object app = thread.getMethod("currentApplication").invoke(null);
