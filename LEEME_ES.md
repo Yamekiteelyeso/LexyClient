@@ -1,31 +1,15 @@
-# LexyClient 1.5.0 — Blue Edition
+# LexyClient 1.6 — Guía rápida
 
-## Cambios en esta entrega
-- `Shift derecho`: abre la GUI desde Minecraft (atajo real registrado con Fabric).
-- `Ctrl derecho`: editor de posiciones de los HUD.
-- Interfaz actualizada con gris grafito, azul eléctrico, paneles redondeados, búsqueda, menú lateral desplazable, controles y persistencia.
-- Spotify Connect: conexión segura PKCE, búsqueda, controles, lista de dispositivos y botones `USE COMPUTER` / `REFRESH DEVICES` para usar un Spotify Desktop abierto en la misma PC.
-- Nueva pestaña `Local Music`: reproducción de tus archivos WAV/AIFF/AU dentro del proceso de Minecraft, sin otra aplicación. Incluye lista, reproducir, pausar, siguiente/anterior, detener, volumen, repetición y carpeta configurable.
-- Continúan disponibles los 13 ajustes gráficos, los 3 perfiles de FPS y los 84 HUDs/informaciones (no son 84 módulos independientes de optimización).
+Versión para **Minecraft 1.20.1 / Fabric / Java 17**.
 
-## Spotify: aclaración importante
-Conectar Spotify no significa poder extraer o reproducir el audio protegido de Spotify con código Java dentro de Minecraft. El Web API controla reproductores Spotify oficiales. Para oír Spotify **en el mismo equipo, sin teléfono ni otra máquina**, inicia Spotify Desktop en esa computadora y elige `USE COMPUTER` o el dispositivo correcto de la lista en la GUI. Suena en tu computadora, y puedes manejar las canciones desde el juego.
+**Teclas:** SHIFT DERECHO abre las opciones, SHIFT IZQUIERDO las cierra. CTRL DERECHO abre directamente el editor HUD.
 
-Si quieres música que realmente se reproduzca **desde el mod**, usa la pestaña `Local Music` con archivos propios.
+**Interfaz adaptable:** la GUI se reduce proporcionalmente con la resolución de pantalla. En Apariencia cambia **MENU SIZE** y **HUD SIZE** por separado.
 
-## Cómo abrir la GUI y reproducir música
-1. Instala Minecraft 1.20.1 con Fabric Loader y Fabric API compatibles.
-2. Compila con JDK 17 y Gradle 8.x ejecutando `gradle build`.
-3. Coloca el `.jar` de salida en `.minecraft/mods`.
-4. Dentro de Minecraft pulsa **Shift derecho** y entra a `Local Music`.
-5. Pulsa `OPEN FOLDER`, agrega archivos WAV, pulsa `REFRESH` y selecciona una canción.
+**Mover FPS, ping y demás:** entra al juego, pulsa SHIFT DERECHO y después **MOVE HUD**, o CTRL DERECHO. Verás los módulos de HUD sobre el juego real. Arrástralos con el ratón. Usa los botones FPS y PING para mostrarlos u ocultarlos. Botones +/- para tamaño; RESET para restaurar. SHIFT IZQUIERDO o ESC guarda y cierra. El tamaño y las posiciones se mantienen al reiniciar y se adaptan a cambios de resolución.
 
-## Compilación automática
-Incluye `.github/workflows/build.yml`: al subir el proyecto a GitHub (rama `main`) la acción intenta compilar y publica el `.jar` como artefacto en la página de Actions.
+**Spotify:** en su pestaña está el botón azul **LOGIN WITH SPOTIFY**. Necesitas introducir una vez tu Client ID público de una app creada en https://developer.spotify.com/dashboard. Registra la URL de retorno exacta `http://127.0.0.1:43871/callback`. El botón abre un enlace oficial de autorización Spotify en tu navegador para iniciar sesión sin introducir la contraseña en Minecraft. Necesitas Spotify Desktop abierto en este ordenador para escuchar por el mismo PC. No se descarga ni se reproduce directamente el catálogo de Spotify dentro del motor de sonido de Minecraft. El reproductor de WAV/AIFF local sí reproduce sonido dentro de Minecraft.
 
-## Estado de verificación
-- La clase de audio local se compiló en Java 21 con destino Java 17 usando un stub de FabricLoader.
-- Pruebas aisladas de exploración de archivos, escalado de audio PCM, límites del volumen y repetición: aprobadas.
-- El proyecto completo **no se ha podido compilar ni ejecutar en Minecraft** en este entorno porque faltan Gradle y las dependencias de Fabric/Minecraft. No se entrega un `.jar` que se haga pasar por funcional.
+**Instalar:** coloca solo `lexy-client-1.6.0.jar` en `.minecraft/mods`, instala Fabric API 1.20.1, y elimina versiones anteriores de LexyClient. No abras el .jar directamente.
 
-Consulta `README.md` para más detalles técnicos.
+**Compilación:** JDK 17 y Gradle 8.11.1: `gradle build`. El workflow GitHub Actions compila y publica el .jar como artifact. Verifica dentro del juego el funcionamiento final.
